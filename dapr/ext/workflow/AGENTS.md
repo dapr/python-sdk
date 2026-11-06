@@ -120,7 +120,9 @@ Activities can be either `def my_activity(ctx, inp)` or `async def my_activity(c
 
 At dispatch time (the gRPC stream loop in `_durabletask/worker.py`), `is_async_callable(activity_fn)` on the wrapper selects between two handlers.
 
-- **Async activities** go through `_execute_activity_async`, then `_ActivityExecutor.execute_async`, which awaits `fn(...)` directly on the event loop. The gRPC response is delivered via `loop.run_in_executor(self._async_worker_manager.thread_pool, stub.CompleteActivityTask, ...)` — the same pool sync activities use, sized by `maximum_thread_pool_workers`.
+- **Async activities** go through `_execute_activity_async`, then `_ActivityExecutor.execute_async`, which awaits `fn(...)` directly on the event loop. The gRPC response is delivered via `loop.run_in_executor(self._async_worker_manager.thread_pool, self._deliver_activity_response, ...)` — the same pool sync activities use, sized by `maximum_thread_pool_workers`.
+
+**One channel for the worker's lifetime.** `start()` opens the gRPC channel and `stop()` closes it; gRPC reconnects it on its own, so when the work-item stream ends the run loop only sends a new `Hello` and `GetWorkItems`. Every call goes through `_sidecar_stub()`, which keeps `stop()` from closing the channel while a call is starting on it (with interceptors, grpcio crashes with SIGSEGV on a call started on a closed channel). Result sends use `wait_for_ready=True` with the `_RESULT_SEND_TIMEOUT` deadline, so a result that is ready during a reconnect waits for the channel instead of failing fast.
 - **Sync activities** go through `_execute_activity`, dispatched to the thread pool by `_AsyncWorkerManager._run_func`. The activity runs on a worker thread, and the response is delivered from the same thread.
 
 Workflow (orchestrator) functions must remain generators (`def` with `yield`). They cannot be `async def` because durabletask's deterministic replay depends on synchronous generator semantics. Only activities support async.
@@ -137,6 +139,8 @@ Workflow (orchestrator) functions must remain generators (`def` with `yield`). T
 ### DaprWorkflowClient (`dapr_workflow_client.py`)
 
 Client for workflow lifecycle management:
+
+Constructor: `DaprWorkflowClient(host, port, logger_options, max_grpc_message_length, api_timeout_seconds)`. `api_timeout_seconds` is a default deadline for this client's unary calls; it overrides `DAPR_API_TIMEOUT_SECONDS` for this client only, through `DaprClientTimeoutInterceptor(timeout_seconds)`. `None` falls back to that setting, then to no deadline. Calls that set their own timeout keep it, and `wait_for_workflow_start` / `wait_for_workflow_completion` are never given it (`_UNBOUNDED_WAIT_METHODS`); their `timeout_in_seconds` bounds them.
 
 - `schedule_new_workflow(workflow, *, input, instance_id, start_at, reuse_id_policy)` → returns `instance_id`. `reuse_id_policy` is deprecated (no effect, emits `DeprecationWarning`): an instance ID can always be reused once the existing instance is in a terminal state.
 - `get_workflow_state(instance_id, *, fetch_payloads=True)` → `Optional[WorkflowState]`

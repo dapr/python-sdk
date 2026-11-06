@@ -6,6 +6,7 @@ import warnings
 from dapr.proto.common.v1 import common_pb2 as dapr_dot_proto_dot_common_dot_v1_dot_common__pb2
 from dapr.proto.runtime.v1 import actors_pb2 as dapr_dot_proto_dot_runtime_dot_v1_dot_actors__pb2
 from dapr.proto.runtime.v1 import ai_pb2 as dapr_dot_proto_dot_runtime_dot_v1_dot_ai__pb2
+from dapr.proto.runtime.v1 import binarystore_pb2 as dapr_dot_proto_dot_runtime_dot_v1_dot_binarystore__pb2
 from dapr.proto.runtime.v1 import binding_pb2 as dapr_dot_proto_dot_runtime_dot_v1_dot_binding__pb2
 from dapr.proto.runtime.v1 import configuration_pb2 as dapr_dot_proto_dot_runtime_dot_v1_dot_configuration__pb2
 from dapr.proto.runtime.v1 import crypto_pb2 as dapr_dot_proto_dot_runtime_dot_v1_dot_crypto__pb2
@@ -15,8 +16,10 @@ from dapr.proto.runtime.v1 import jobs_pb2 as dapr_dot_proto_dot_runtime_dot_v1_
 from dapr.proto.runtime.v1 import lock_pb2 as dapr_dot_proto_dot_runtime_dot_v1_dot_lock__pb2
 from dapr.proto.runtime.v1 import metadata_pb2 as dapr_dot_proto_dot_runtime_dot_v1_dot_metadata__pb2
 from dapr.proto.runtime.v1 import pubsub_pb2 as dapr_dot_proto_dot_runtime_dot_v1_dot_pubsub__pb2
+from dapr.proto.runtime.v1 import search_pb2 as dapr_dot_proto_dot_runtime_dot_v1_dot_search__pb2
 from dapr.proto.runtime.v1 import secret_pb2 as dapr_dot_proto_dot_runtime_dot_v1_dot_secret__pb2
 from dapr.proto.runtime.v1 import state_pb2 as dapr_dot_proto_dot_runtime_dot_v1_dot_state__pb2
+from dapr.proto.runtime.v1 import vector_pb2 as dapr_dot_proto_dot_runtime_dot_v1_dot_vector__pb2
 from dapr.proto.runtime.v1 import workflow_pb2 as dapr_dot_proto_dot_runtime_dot_v1_dot_workflow__pb2
 from google.protobuf import empty_pb2 as google_dot_protobuf_dot_empty__pb2
 
@@ -419,6 +422,106 @@ class DaprStub:
                 '/dapr.proto.runtime.v1.Dapr/ConverseAlpha2',
                 request_serializer=dapr_dot_proto_dot_runtime_dot_v1_dot_ai__pb2.ConversationRequestAlpha2.SerializeToString,
                 response_deserializer=dapr_dot_proto_dot_runtime_dot_v1_dot_ai__pb2.ConversationResponseAlpha2.FromString,
+                _registered_method=True)
+        self.CreateIndexAlpha1 = channel.unary_unary(
+                '/dapr.proto.runtime.v1.Dapr/CreateIndexAlpha1',
+                request_serializer=dapr_dot_proto_dot_runtime_dot_v1_dot_search__pb2.CreateIndexRequestAlpha1.SerializeToString,
+                response_deserializer=google_dot_protobuf_dot_empty__pb2.Empty.FromString,
+                _registered_method=True)
+        self.GetIndexAlpha1 = channel.unary_unary(
+                '/dapr.proto.runtime.v1.Dapr/GetIndexAlpha1',
+                request_serializer=dapr_dot_proto_dot_runtime_dot_v1_dot_search__pb2.GetIndexRequestAlpha1.SerializeToString,
+                response_deserializer=dapr_dot_proto_dot_runtime_dot_v1_dot_search__pb2.GetIndexResponseAlpha1.FromString,
+                _registered_method=True)
+        self.ListIndexesAlpha1 = channel.unary_unary(
+                '/dapr.proto.runtime.v1.Dapr/ListIndexesAlpha1',
+                request_serializer=dapr_dot_proto_dot_runtime_dot_v1_dot_search__pb2.ListIndexesRequestAlpha1.SerializeToString,
+                response_deserializer=dapr_dot_proto_dot_runtime_dot_v1_dot_search__pb2.ListIndexesResponseAlpha1.FromString,
+                _registered_method=True)
+        self.DeleteIndexAlpha1 = channel.unary_unary(
+                '/dapr.proto.runtime.v1.Dapr/DeleteIndexAlpha1',
+                request_serializer=dapr_dot_proto_dot_runtime_dot_v1_dot_search__pb2.DeleteIndexRequestAlpha1.SerializeToString,
+                response_deserializer=google_dot_protobuf_dot_empty__pb2.Empty.FromString,
+                _registered_method=True)
+        self.IndexDocumentsAlpha1 = channel.unary_unary(
+                '/dapr.proto.runtime.v1.Dapr/IndexDocumentsAlpha1',
+                request_serializer=dapr_dot_proto_dot_runtime_dot_v1_dot_search__pb2.IndexDocumentsRequestAlpha1.SerializeToString,
+                response_deserializer=dapr_dot_proto_dot_runtime_dot_v1_dot_search__pb2.IndexDocumentsResponseAlpha1.FromString,
+                _registered_method=True)
+        self.GetDocumentsAlpha1 = channel.unary_unary(
+                '/dapr.proto.runtime.v1.Dapr/GetDocumentsAlpha1',
+                request_serializer=dapr_dot_proto_dot_runtime_dot_v1_dot_search__pb2.GetDocumentsRequestAlpha1.SerializeToString,
+                response_deserializer=dapr_dot_proto_dot_runtime_dot_v1_dot_search__pb2.GetDocumentsResponseAlpha1.FromString,
+                _registered_method=True)
+        self.DeleteDocumentsAlpha1 = channel.unary_unary(
+                '/dapr.proto.runtime.v1.Dapr/DeleteDocumentsAlpha1',
+                request_serializer=dapr_dot_proto_dot_runtime_dot_v1_dot_search__pb2.DeleteDocumentsRequestAlpha1.SerializeToString,
+                response_deserializer=dapr_dot_proto_dot_runtime_dot_v1_dot_search__pb2.DeleteDocumentsResponseAlpha1.FromString,
+                _registered_method=True)
+        self.SearchAlpha1 = channel.unary_unary(
+                '/dapr.proto.runtime.v1.Dapr/SearchAlpha1',
+                request_serializer=dapr_dot_proto_dot_runtime_dot_v1_dot_search__pb2.SearchRequestAlpha1.SerializeToString,
+                response_deserializer=dapr_dot_proto_dot_runtime_dot_v1_dot_search__pb2.SearchResponseAlpha1.FromString,
+                _registered_method=True)
+        self.CreateCollectionAlpha1 = channel.unary_unary(
+                '/dapr.proto.runtime.v1.Dapr/CreateCollectionAlpha1',
+                request_serializer=dapr_dot_proto_dot_runtime_dot_v1_dot_vector__pb2.CreateCollectionRequestAlpha1.SerializeToString,
+                response_deserializer=google_dot_protobuf_dot_empty__pb2.Empty.FromString,
+                _registered_method=True)
+        self.GetCollectionAlpha1 = channel.unary_unary(
+                '/dapr.proto.runtime.v1.Dapr/GetCollectionAlpha1',
+                request_serializer=dapr_dot_proto_dot_runtime_dot_v1_dot_vector__pb2.GetCollectionRequestAlpha1.SerializeToString,
+                response_deserializer=dapr_dot_proto_dot_runtime_dot_v1_dot_vector__pb2.GetCollectionResponseAlpha1.FromString,
+                _registered_method=True)
+        self.ListCollectionsAlpha1 = channel.unary_unary(
+                '/dapr.proto.runtime.v1.Dapr/ListCollectionsAlpha1',
+                request_serializer=dapr_dot_proto_dot_runtime_dot_v1_dot_vector__pb2.ListCollectionsRequestAlpha1.SerializeToString,
+                response_deserializer=dapr_dot_proto_dot_runtime_dot_v1_dot_vector__pb2.ListCollectionsResponseAlpha1.FromString,
+                _registered_method=True)
+        self.DeleteCollectionAlpha1 = channel.unary_unary(
+                '/dapr.proto.runtime.v1.Dapr/DeleteCollectionAlpha1',
+                request_serializer=dapr_dot_proto_dot_runtime_dot_v1_dot_vector__pb2.DeleteCollectionRequestAlpha1.SerializeToString,
+                response_deserializer=google_dot_protobuf_dot_empty__pb2.Empty.FromString,
+                _registered_method=True)
+        self.UpsertVectorsAlpha1 = channel.unary_unary(
+                '/dapr.proto.runtime.v1.Dapr/UpsertVectorsAlpha1',
+                request_serializer=dapr_dot_proto_dot_runtime_dot_v1_dot_vector__pb2.UpsertVectorsRequestAlpha1.SerializeToString,
+                response_deserializer=dapr_dot_proto_dot_runtime_dot_v1_dot_vector__pb2.UpsertVectorsResponseAlpha1.FromString,
+                _registered_method=True)
+        self.DeleteVectorsAlpha1 = channel.unary_unary(
+                '/dapr.proto.runtime.v1.Dapr/DeleteVectorsAlpha1',
+                request_serializer=dapr_dot_proto_dot_runtime_dot_v1_dot_vector__pb2.DeleteVectorsRequestAlpha1.SerializeToString,
+                response_deserializer=dapr_dot_proto_dot_runtime_dot_v1_dot_vector__pb2.DeleteVectorsResponseAlpha1.FromString,
+                _registered_method=True)
+        self.GetVectorsAlpha1 = channel.unary_unary(
+                '/dapr.proto.runtime.v1.Dapr/GetVectorsAlpha1',
+                request_serializer=dapr_dot_proto_dot_runtime_dot_v1_dot_vector__pb2.GetVectorsRequestAlpha1.SerializeToString,
+                response_deserializer=dapr_dot_proto_dot_runtime_dot_v1_dot_vector__pb2.GetVectorsResponseAlpha1.FromString,
+                _registered_method=True)
+        self.QueryVectorsAlpha1 = channel.unary_unary(
+                '/dapr.proto.runtime.v1.Dapr/QueryVectorsAlpha1',
+                request_serializer=dapr_dot_proto_dot_runtime_dot_v1_dot_vector__pb2.QueryVectorsRequestAlpha1.SerializeToString,
+                response_deserializer=dapr_dot_proto_dot_runtime_dot_v1_dot_vector__pb2.QueryVectorsResponseAlpha1.FromString,
+                _registered_method=True)
+        self.BatchQueryVectorsAlpha1 = channel.unary_unary(
+                '/dapr.proto.runtime.v1.Dapr/BatchQueryVectorsAlpha1',
+                request_serializer=dapr_dot_proto_dot_runtime_dot_v1_dot_vector__pb2.BatchQueryVectorsRequestAlpha1.SerializeToString,
+                response_deserializer=dapr_dot_proto_dot_runtime_dot_v1_dot_vector__pb2.BatchQueryVectorsResponseAlpha1.FromString,
+                _registered_method=True)
+        self.SetBinaryFileAlpha1 = channel.stream_unary(
+                '/dapr.proto.runtime.v1.Dapr/SetBinaryFileAlpha1',
+                request_serializer=dapr_dot_proto_dot_runtime_dot_v1_dot_binarystore__pb2.SetBinaryFileRequestAlpha1.SerializeToString,
+                response_deserializer=dapr_dot_proto_dot_runtime_dot_v1_dot_binarystore__pb2.SetBinaryFileResponseAlpha1.FromString,
+                _registered_method=True)
+        self.GetBinaryFileAlpha1 = channel.unary_stream(
+                '/dapr.proto.runtime.v1.Dapr/GetBinaryFileAlpha1',
+                request_serializer=dapr_dot_proto_dot_runtime_dot_v1_dot_binarystore__pb2.GetBinaryFileRequestAlpha1.SerializeToString,
+                response_deserializer=dapr_dot_proto_dot_runtime_dot_v1_dot_binarystore__pb2.GetBinaryFileResponseAlpha1.FromString,
+                _registered_method=True)
+        self.DeleteBinaryFileAlpha1 = channel.unary_unary(
+                '/dapr.proto.runtime.v1.Dapr/DeleteBinaryFileAlpha1',
+                request_serializer=dapr_dot_proto_dot_runtime_dot_v1_dot_binarystore__pb2.DeleteBinaryFileRequestAlpha1.SerializeToString,
+                response_deserializer=dapr_dot_proto_dot_runtime_dot_v1_dot_binarystore__pb2.DeleteBinaryFileResponseAlpha1.FromString,
                 _registered_method=True)
 
 
@@ -949,6 +1052,154 @@ class DaprServicer:
         context.set_details('Method not implemented!')
         raise NotImplementedError('Method not implemented!')
 
+    def CreateIndexAlpha1(self, request, context):
+        """Search building block (alpha1) - lexical / structured search.
+        See dapr/proto/runtime/v1/search.proto for type and semantics docs.
+
+        Create an index.
+        """
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
+    def GetIndexAlpha1(self, request, context):
+        """Get an index.
+        """
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
+    def ListIndexesAlpha1(self, request, context):
+        """List indexes.
+        """
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
+    def DeleteIndexAlpha1(self, request, context):
+        """Delete an index.
+        """
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
+    def IndexDocumentsAlpha1(self, request, context):
+        """Index (keyed upsert) documents.
+        """
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
+    def GetDocumentsAlpha1(self, request, context):
+        """Get documents by ID.
+        """
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
+    def DeleteDocumentsAlpha1(self, request, context):
+        """Delete documents by ID.
+        """
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
+    def SearchAlpha1(self, request, context):
+        """Search an index.
+        """
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
+    def CreateCollectionAlpha1(self, request, context):
+        """Vector building block (alpha1) - vector similarity search.
+        See dapr/proto/runtime/v1/vector.proto for type and semantics docs.
+
+        Create a collection.
+        """
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
+    def GetCollectionAlpha1(self, request, context):
+        """Get a collection.
+        """
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
+    def ListCollectionsAlpha1(self, request, context):
+        """List collections.
+        """
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
+    def DeleteCollectionAlpha1(self, request, context):
+        """Delete a collection.
+        """
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
+    def UpsertVectorsAlpha1(self, request, context):
+        """Upsert (keyed) vectors.
+        """
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
+    def DeleteVectorsAlpha1(self, request, context):
+        """Delete vectors by ID.
+        """
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
+    def GetVectorsAlpha1(self, request, context):
+        """Get vectors by ID.
+        """
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
+    def QueryVectorsAlpha1(self, request, context):
+        """Query vectors.
+        """
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
+    def BatchQueryVectorsAlpha1(self, request, context):
+        """Issue multiple queries against the same collection, each succeeding or
+        failing on its own.
+        """
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
+    def SetBinaryFileAlpha1(self, request_iterator, context):
+        """Stores a binary file using a streaming request. The first message must
+        contain the options; subsequent messages carry the file content as chunks.
+        """
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
+    def GetBinaryFileAlpha1(self, request, context):
+        """Retrieves a binary file as a stream of chunks.
+        """
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
+    def DeleteBinaryFileAlpha1(self, request, context):
+        """Deletes a binary file.
+        """
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
 
 def add_DaprServicer_to_server(servicer, server):
     rpc_method_handlers = {
@@ -1321,6 +1572,106 @@ def add_DaprServicer_to_server(servicer, server):
                     servicer.ConverseAlpha2,
                     request_deserializer=dapr_dot_proto_dot_runtime_dot_v1_dot_ai__pb2.ConversationRequestAlpha2.FromString,
                     response_serializer=dapr_dot_proto_dot_runtime_dot_v1_dot_ai__pb2.ConversationResponseAlpha2.SerializeToString,
+            ),
+            'CreateIndexAlpha1': grpc.unary_unary_rpc_method_handler(
+                    servicer.CreateIndexAlpha1,
+                    request_deserializer=dapr_dot_proto_dot_runtime_dot_v1_dot_search__pb2.CreateIndexRequestAlpha1.FromString,
+                    response_serializer=google_dot_protobuf_dot_empty__pb2.Empty.SerializeToString,
+            ),
+            'GetIndexAlpha1': grpc.unary_unary_rpc_method_handler(
+                    servicer.GetIndexAlpha1,
+                    request_deserializer=dapr_dot_proto_dot_runtime_dot_v1_dot_search__pb2.GetIndexRequestAlpha1.FromString,
+                    response_serializer=dapr_dot_proto_dot_runtime_dot_v1_dot_search__pb2.GetIndexResponseAlpha1.SerializeToString,
+            ),
+            'ListIndexesAlpha1': grpc.unary_unary_rpc_method_handler(
+                    servicer.ListIndexesAlpha1,
+                    request_deserializer=dapr_dot_proto_dot_runtime_dot_v1_dot_search__pb2.ListIndexesRequestAlpha1.FromString,
+                    response_serializer=dapr_dot_proto_dot_runtime_dot_v1_dot_search__pb2.ListIndexesResponseAlpha1.SerializeToString,
+            ),
+            'DeleteIndexAlpha1': grpc.unary_unary_rpc_method_handler(
+                    servicer.DeleteIndexAlpha1,
+                    request_deserializer=dapr_dot_proto_dot_runtime_dot_v1_dot_search__pb2.DeleteIndexRequestAlpha1.FromString,
+                    response_serializer=google_dot_protobuf_dot_empty__pb2.Empty.SerializeToString,
+            ),
+            'IndexDocumentsAlpha1': grpc.unary_unary_rpc_method_handler(
+                    servicer.IndexDocumentsAlpha1,
+                    request_deserializer=dapr_dot_proto_dot_runtime_dot_v1_dot_search__pb2.IndexDocumentsRequestAlpha1.FromString,
+                    response_serializer=dapr_dot_proto_dot_runtime_dot_v1_dot_search__pb2.IndexDocumentsResponseAlpha1.SerializeToString,
+            ),
+            'GetDocumentsAlpha1': grpc.unary_unary_rpc_method_handler(
+                    servicer.GetDocumentsAlpha1,
+                    request_deserializer=dapr_dot_proto_dot_runtime_dot_v1_dot_search__pb2.GetDocumentsRequestAlpha1.FromString,
+                    response_serializer=dapr_dot_proto_dot_runtime_dot_v1_dot_search__pb2.GetDocumentsResponseAlpha1.SerializeToString,
+            ),
+            'DeleteDocumentsAlpha1': grpc.unary_unary_rpc_method_handler(
+                    servicer.DeleteDocumentsAlpha1,
+                    request_deserializer=dapr_dot_proto_dot_runtime_dot_v1_dot_search__pb2.DeleteDocumentsRequestAlpha1.FromString,
+                    response_serializer=dapr_dot_proto_dot_runtime_dot_v1_dot_search__pb2.DeleteDocumentsResponseAlpha1.SerializeToString,
+            ),
+            'SearchAlpha1': grpc.unary_unary_rpc_method_handler(
+                    servicer.SearchAlpha1,
+                    request_deserializer=dapr_dot_proto_dot_runtime_dot_v1_dot_search__pb2.SearchRequestAlpha1.FromString,
+                    response_serializer=dapr_dot_proto_dot_runtime_dot_v1_dot_search__pb2.SearchResponseAlpha1.SerializeToString,
+            ),
+            'CreateCollectionAlpha1': grpc.unary_unary_rpc_method_handler(
+                    servicer.CreateCollectionAlpha1,
+                    request_deserializer=dapr_dot_proto_dot_runtime_dot_v1_dot_vector__pb2.CreateCollectionRequestAlpha1.FromString,
+                    response_serializer=google_dot_protobuf_dot_empty__pb2.Empty.SerializeToString,
+            ),
+            'GetCollectionAlpha1': grpc.unary_unary_rpc_method_handler(
+                    servicer.GetCollectionAlpha1,
+                    request_deserializer=dapr_dot_proto_dot_runtime_dot_v1_dot_vector__pb2.GetCollectionRequestAlpha1.FromString,
+                    response_serializer=dapr_dot_proto_dot_runtime_dot_v1_dot_vector__pb2.GetCollectionResponseAlpha1.SerializeToString,
+            ),
+            'ListCollectionsAlpha1': grpc.unary_unary_rpc_method_handler(
+                    servicer.ListCollectionsAlpha1,
+                    request_deserializer=dapr_dot_proto_dot_runtime_dot_v1_dot_vector__pb2.ListCollectionsRequestAlpha1.FromString,
+                    response_serializer=dapr_dot_proto_dot_runtime_dot_v1_dot_vector__pb2.ListCollectionsResponseAlpha1.SerializeToString,
+            ),
+            'DeleteCollectionAlpha1': grpc.unary_unary_rpc_method_handler(
+                    servicer.DeleteCollectionAlpha1,
+                    request_deserializer=dapr_dot_proto_dot_runtime_dot_v1_dot_vector__pb2.DeleteCollectionRequestAlpha1.FromString,
+                    response_serializer=google_dot_protobuf_dot_empty__pb2.Empty.SerializeToString,
+            ),
+            'UpsertVectorsAlpha1': grpc.unary_unary_rpc_method_handler(
+                    servicer.UpsertVectorsAlpha1,
+                    request_deserializer=dapr_dot_proto_dot_runtime_dot_v1_dot_vector__pb2.UpsertVectorsRequestAlpha1.FromString,
+                    response_serializer=dapr_dot_proto_dot_runtime_dot_v1_dot_vector__pb2.UpsertVectorsResponseAlpha1.SerializeToString,
+            ),
+            'DeleteVectorsAlpha1': grpc.unary_unary_rpc_method_handler(
+                    servicer.DeleteVectorsAlpha1,
+                    request_deserializer=dapr_dot_proto_dot_runtime_dot_v1_dot_vector__pb2.DeleteVectorsRequestAlpha1.FromString,
+                    response_serializer=dapr_dot_proto_dot_runtime_dot_v1_dot_vector__pb2.DeleteVectorsResponseAlpha1.SerializeToString,
+            ),
+            'GetVectorsAlpha1': grpc.unary_unary_rpc_method_handler(
+                    servicer.GetVectorsAlpha1,
+                    request_deserializer=dapr_dot_proto_dot_runtime_dot_v1_dot_vector__pb2.GetVectorsRequestAlpha1.FromString,
+                    response_serializer=dapr_dot_proto_dot_runtime_dot_v1_dot_vector__pb2.GetVectorsResponseAlpha1.SerializeToString,
+            ),
+            'QueryVectorsAlpha1': grpc.unary_unary_rpc_method_handler(
+                    servicer.QueryVectorsAlpha1,
+                    request_deserializer=dapr_dot_proto_dot_runtime_dot_v1_dot_vector__pb2.QueryVectorsRequestAlpha1.FromString,
+                    response_serializer=dapr_dot_proto_dot_runtime_dot_v1_dot_vector__pb2.QueryVectorsResponseAlpha1.SerializeToString,
+            ),
+            'BatchQueryVectorsAlpha1': grpc.unary_unary_rpc_method_handler(
+                    servicer.BatchQueryVectorsAlpha1,
+                    request_deserializer=dapr_dot_proto_dot_runtime_dot_v1_dot_vector__pb2.BatchQueryVectorsRequestAlpha1.FromString,
+                    response_serializer=dapr_dot_proto_dot_runtime_dot_v1_dot_vector__pb2.BatchQueryVectorsResponseAlpha1.SerializeToString,
+            ),
+            'SetBinaryFileAlpha1': grpc.stream_unary_rpc_method_handler(
+                    servicer.SetBinaryFileAlpha1,
+                    request_deserializer=dapr_dot_proto_dot_runtime_dot_v1_dot_binarystore__pb2.SetBinaryFileRequestAlpha1.FromString,
+                    response_serializer=dapr_dot_proto_dot_runtime_dot_v1_dot_binarystore__pb2.SetBinaryFileResponseAlpha1.SerializeToString,
+            ),
+            'GetBinaryFileAlpha1': grpc.unary_stream_rpc_method_handler(
+                    servicer.GetBinaryFileAlpha1,
+                    request_deserializer=dapr_dot_proto_dot_runtime_dot_v1_dot_binarystore__pb2.GetBinaryFileRequestAlpha1.FromString,
+                    response_serializer=dapr_dot_proto_dot_runtime_dot_v1_dot_binarystore__pb2.GetBinaryFileResponseAlpha1.SerializeToString,
+            ),
+            'DeleteBinaryFileAlpha1': grpc.unary_unary_rpc_method_handler(
+                    servicer.DeleteBinaryFileAlpha1,
+                    request_deserializer=dapr_dot_proto_dot_runtime_dot_v1_dot_binarystore__pb2.DeleteBinaryFileRequestAlpha1.FromString,
+                    response_serializer=dapr_dot_proto_dot_runtime_dot_v1_dot_binarystore__pb2.DeleteBinaryFileResponseAlpha1.SerializeToString,
             ),
     }
     generic_handler = grpc.method_handlers_generic_handler(
@@ -3322,6 +3673,546 @@ class Dapr:
             '/dapr.proto.runtime.v1.Dapr/ConverseAlpha2',
             dapr_dot_proto_dot_runtime_dot_v1_dot_ai__pb2.ConversationRequestAlpha2.SerializeToString,
             dapr_dot_proto_dot_runtime_dot_v1_dot_ai__pb2.ConversationResponseAlpha2.FromString,
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+            _registered_method=True)
+
+    @staticmethod
+    def CreateIndexAlpha1(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(
+            request,
+            target,
+            '/dapr.proto.runtime.v1.Dapr/CreateIndexAlpha1',
+            dapr_dot_proto_dot_runtime_dot_v1_dot_search__pb2.CreateIndexRequestAlpha1.SerializeToString,
+            google_dot_protobuf_dot_empty__pb2.Empty.FromString,
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+            _registered_method=True)
+
+    @staticmethod
+    def GetIndexAlpha1(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(
+            request,
+            target,
+            '/dapr.proto.runtime.v1.Dapr/GetIndexAlpha1',
+            dapr_dot_proto_dot_runtime_dot_v1_dot_search__pb2.GetIndexRequestAlpha1.SerializeToString,
+            dapr_dot_proto_dot_runtime_dot_v1_dot_search__pb2.GetIndexResponseAlpha1.FromString,
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+            _registered_method=True)
+
+    @staticmethod
+    def ListIndexesAlpha1(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(
+            request,
+            target,
+            '/dapr.proto.runtime.v1.Dapr/ListIndexesAlpha1',
+            dapr_dot_proto_dot_runtime_dot_v1_dot_search__pb2.ListIndexesRequestAlpha1.SerializeToString,
+            dapr_dot_proto_dot_runtime_dot_v1_dot_search__pb2.ListIndexesResponseAlpha1.FromString,
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+            _registered_method=True)
+
+    @staticmethod
+    def DeleteIndexAlpha1(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(
+            request,
+            target,
+            '/dapr.proto.runtime.v1.Dapr/DeleteIndexAlpha1',
+            dapr_dot_proto_dot_runtime_dot_v1_dot_search__pb2.DeleteIndexRequestAlpha1.SerializeToString,
+            google_dot_protobuf_dot_empty__pb2.Empty.FromString,
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+            _registered_method=True)
+
+    @staticmethod
+    def IndexDocumentsAlpha1(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(
+            request,
+            target,
+            '/dapr.proto.runtime.v1.Dapr/IndexDocumentsAlpha1',
+            dapr_dot_proto_dot_runtime_dot_v1_dot_search__pb2.IndexDocumentsRequestAlpha1.SerializeToString,
+            dapr_dot_proto_dot_runtime_dot_v1_dot_search__pb2.IndexDocumentsResponseAlpha1.FromString,
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+            _registered_method=True)
+
+    @staticmethod
+    def GetDocumentsAlpha1(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(
+            request,
+            target,
+            '/dapr.proto.runtime.v1.Dapr/GetDocumentsAlpha1',
+            dapr_dot_proto_dot_runtime_dot_v1_dot_search__pb2.GetDocumentsRequestAlpha1.SerializeToString,
+            dapr_dot_proto_dot_runtime_dot_v1_dot_search__pb2.GetDocumentsResponseAlpha1.FromString,
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+            _registered_method=True)
+
+    @staticmethod
+    def DeleteDocumentsAlpha1(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(
+            request,
+            target,
+            '/dapr.proto.runtime.v1.Dapr/DeleteDocumentsAlpha1',
+            dapr_dot_proto_dot_runtime_dot_v1_dot_search__pb2.DeleteDocumentsRequestAlpha1.SerializeToString,
+            dapr_dot_proto_dot_runtime_dot_v1_dot_search__pb2.DeleteDocumentsResponseAlpha1.FromString,
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+            _registered_method=True)
+
+    @staticmethod
+    def SearchAlpha1(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(
+            request,
+            target,
+            '/dapr.proto.runtime.v1.Dapr/SearchAlpha1',
+            dapr_dot_proto_dot_runtime_dot_v1_dot_search__pb2.SearchRequestAlpha1.SerializeToString,
+            dapr_dot_proto_dot_runtime_dot_v1_dot_search__pb2.SearchResponseAlpha1.FromString,
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+            _registered_method=True)
+
+    @staticmethod
+    def CreateCollectionAlpha1(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(
+            request,
+            target,
+            '/dapr.proto.runtime.v1.Dapr/CreateCollectionAlpha1',
+            dapr_dot_proto_dot_runtime_dot_v1_dot_vector__pb2.CreateCollectionRequestAlpha1.SerializeToString,
+            google_dot_protobuf_dot_empty__pb2.Empty.FromString,
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+            _registered_method=True)
+
+    @staticmethod
+    def GetCollectionAlpha1(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(
+            request,
+            target,
+            '/dapr.proto.runtime.v1.Dapr/GetCollectionAlpha1',
+            dapr_dot_proto_dot_runtime_dot_v1_dot_vector__pb2.GetCollectionRequestAlpha1.SerializeToString,
+            dapr_dot_proto_dot_runtime_dot_v1_dot_vector__pb2.GetCollectionResponseAlpha1.FromString,
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+            _registered_method=True)
+
+    @staticmethod
+    def ListCollectionsAlpha1(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(
+            request,
+            target,
+            '/dapr.proto.runtime.v1.Dapr/ListCollectionsAlpha1',
+            dapr_dot_proto_dot_runtime_dot_v1_dot_vector__pb2.ListCollectionsRequestAlpha1.SerializeToString,
+            dapr_dot_proto_dot_runtime_dot_v1_dot_vector__pb2.ListCollectionsResponseAlpha1.FromString,
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+            _registered_method=True)
+
+    @staticmethod
+    def DeleteCollectionAlpha1(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(
+            request,
+            target,
+            '/dapr.proto.runtime.v1.Dapr/DeleteCollectionAlpha1',
+            dapr_dot_proto_dot_runtime_dot_v1_dot_vector__pb2.DeleteCollectionRequestAlpha1.SerializeToString,
+            google_dot_protobuf_dot_empty__pb2.Empty.FromString,
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+            _registered_method=True)
+
+    @staticmethod
+    def UpsertVectorsAlpha1(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(
+            request,
+            target,
+            '/dapr.proto.runtime.v1.Dapr/UpsertVectorsAlpha1',
+            dapr_dot_proto_dot_runtime_dot_v1_dot_vector__pb2.UpsertVectorsRequestAlpha1.SerializeToString,
+            dapr_dot_proto_dot_runtime_dot_v1_dot_vector__pb2.UpsertVectorsResponseAlpha1.FromString,
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+            _registered_method=True)
+
+    @staticmethod
+    def DeleteVectorsAlpha1(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(
+            request,
+            target,
+            '/dapr.proto.runtime.v1.Dapr/DeleteVectorsAlpha1',
+            dapr_dot_proto_dot_runtime_dot_v1_dot_vector__pb2.DeleteVectorsRequestAlpha1.SerializeToString,
+            dapr_dot_proto_dot_runtime_dot_v1_dot_vector__pb2.DeleteVectorsResponseAlpha1.FromString,
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+            _registered_method=True)
+
+    @staticmethod
+    def GetVectorsAlpha1(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(
+            request,
+            target,
+            '/dapr.proto.runtime.v1.Dapr/GetVectorsAlpha1',
+            dapr_dot_proto_dot_runtime_dot_v1_dot_vector__pb2.GetVectorsRequestAlpha1.SerializeToString,
+            dapr_dot_proto_dot_runtime_dot_v1_dot_vector__pb2.GetVectorsResponseAlpha1.FromString,
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+            _registered_method=True)
+
+    @staticmethod
+    def QueryVectorsAlpha1(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(
+            request,
+            target,
+            '/dapr.proto.runtime.v1.Dapr/QueryVectorsAlpha1',
+            dapr_dot_proto_dot_runtime_dot_v1_dot_vector__pb2.QueryVectorsRequestAlpha1.SerializeToString,
+            dapr_dot_proto_dot_runtime_dot_v1_dot_vector__pb2.QueryVectorsResponseAlpha1.FromString,
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+            _registered_method=True)
+
+    @staticmethod
+    def BatchQueryVectorsAlpha1(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(
+            request,
+            target,
+            '/dapr.proto.runtime.v1.Dapr/BatchQueryVectorsAlpha1',
+            dapr_dot_proto_dot_runtime_dot_v1_dot_vector__pb2.BatchQueryVectorsRequestAlpha1.SerializeToString,
+            dapr_dot_proto_dot_runtime_dot_v1_dot_vector__pb2.BatchQueryVectorsResponseAlpha1.FromString,
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+            _registered_method=True)
+
+    @staticmethod
+    def SetBinaryFileAlpha1(request_iterator,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.stream_unary(
+            request_iterator,
+            target,
+            '/dapr.proto.runtime.v1.Dapr/SetBinaryFileAlpha1',
+            dapr_dot_proto_dot_runtime_dot_v1_dot_binarystore__pb2.SetBinaryFileRequestAlpha1.SerializeToString,
+            dapr_dot_proto_dot_runtime_dot_v1_dot_binarystore__pb2.SetBinaryFileResponseAlpha1.FromString,
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+            _registered_method=True)
+
+    @staticmethod
+    def GetBinaryFileAlpha1(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_stream(
+            request,
+            target,
+            '/dapr.proto.runtime.v1.Dapr/GetBinaryFileAlpha1',
+            dapr_dot_proto_dot_runtime_dot_v1_dot_binarystore__pb2.GetBinaryFileRequestAlpha1.SerializeToString,
+            dapr_dot_proto_dot_runtime_dot_v1_dot_binarystore__pb2.GetBinaryFileResponseAlpha1.FromString,
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+            _registered_method=True)
+
+    @staticmethod
+    def DeleteBinaryFileAlpha1(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(
+            request,
+            target,
+            '/dapr.proto.runtime.v1.Dapr/DeleteBinaryFileAlpha1',
+            dapr_dot_proto_dot_runtime_dot_v1_dot_binarystore__pb2.DeleteBinaryFileRequestAlpha1.SerializeToString,
+            dapr_dot_proto_dot_runtime_dot_v1_dot_binarystore__pb2.DeleteBinaryFileResponseAlpha1.FromString,
             options,
             channel_credentials,
             insecure,

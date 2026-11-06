@@ -60,6 +60,7 @@ class DaprWorkflowClient:
         port: Optional[str] = None,
         logger_options: Optional[LoggerOptions] = None,
         max_grpc_message_length: Optional[int] = None,
+        api_timeout_seconds: Optional[float] = None,
     ):
         """Initializes the sync workflow client.
 
@@ -74,6 +75,17 @@ class DaprWorkflowClient:
                 ``DAPR_GRPC_MAX_INBOUND_MESSAGE_SIZE_BYTES`` env var (if non-zero),
                 then the gRPC default (4 MiB). ``0`` in either source means
                 "no opinion" and falls through to the next source.
+            api_timeout_seconds: Default deadline in seconds for this client's calls to the
+                sidecar, such as ``schedule_new_workflow`` and ``get_workflow_state``. It
+                overrides ``DAPR_API_TIMEOUT_SECONDS`` for this client only, so a hung call
+                fails with ``DEADLINE_EXCEEDED`` without bounding other Dapr calls in the
+                process. ``None`` (the default) falls back to ``DAPR_API_TIMEOUT_SECONDS``,
+                and to no deadline when that is unset. It does not apply to
+                ``wait_for_workflow_start`` and ``wait_for_workflow_completion``, which are
+                bounded only by their own ``timeout_in_seconds``.
+
+        Raises:
+            ValueError: If ``api_timeout_seconds`` is not greater than 0.
         """
         address = getAddress(host, port)
 
@@ -89,13 +101,14 @@ class DaprWorkflowClient:
             metadata = ((DAPR_API_TOKEN_HEADER, settings.DAPR_API_TOKEN),)
         options = self._logger.get_options()
         channel_options = get_grpc_channel_options(max_grpc_message_length)
+        timeout_interceptor = DaprClientTimeoutInterceptor(api_timeout_seconds)
         self.__obj = client.TaskHubGrpcClient(
             host_address=uri.endpoint,
             metadata=metadata,
             secure_channel=uri.tls,
             log_handler=options.log_handler,
             log_formatter=options.log_formatter,
-            interceptors=[DaprClientTimeoutInterceptor()],
+            interceptors=[timeout_interceptor],
             channel_options=channel_options,
         )
 
