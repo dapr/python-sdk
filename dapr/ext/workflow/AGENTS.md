@@ -15,6 +15,7 @@ dapr/ext/workflow/
 ├── workflow_activity_context.py       # WorkflowActivityContext wrapper
 ├── workflow_state.py                  # WorkflowState, WorkflowStatus enum
 ├── workflow_management.py             # WorkflowHistoryEvent(Type), WorkflowInstanceIdPage
+├── workflow_operation_result.py       # Results of the *_with_result client methods (staged)
 ├── retry_policy.py                    # RetryPolicy wrapper
 ├── util.py                            # gRPC address resolution
 ├── logger/options.py                  # LoggerOptions
@@ -27,6 +28,7 @@ tests/ext/workflow/
 ├── test_workflow_client.py            # Sync client (mock gRPC)
 ├── test_workflow_management.py        # list/history/rerun on both clients
 ├── test_workflow_client_aio.py        # Async client (IsolatedAsyncioTestCase)
+├── test_workflow_staged.py            # *_with_result methods against a fake gRPC sidecar
 ├── test_workflow_runtime.py           # Registration, decorators, worker readiness
 ├── test_workflow_util.py              # Address resolution
 └── durabletask/                       # Vendored durabletask engine tests (pytest)
@@ -93,6 +95,9 @@ from dapr.ext.workflow import (
     WorkflowInstanceIdPage,  # One page of instance IDs plus the continuation token
     FailureDetails,  # Error carried by WorkflowHistoryEvent / TaskFailedError
     UNSET,  # Sentinel default for rerun_workflow_from_event's input
+    WorkflowScheduleResult,  # instance_id + staged, from schedule_new_workflow_with_result
+    WorkflowOperationResult,  # staged, from raise/terminate/pause/resume *_with_result
+    WorkflowRerunResult,  # new_instance_id + staged, from rerun_workflow_from_event_with_result
 )
 
 # Async client:
@@ -155,6 +160,8 @@ Constructor: `DaprWorkflowClient(host, port, logger_options, max_grpc_message_le
 - `get_workflow_history(instance_id)` → `list[WorkflowHistoryEvent]`
 - `rerun_workflow_from_event(instance_id, event_id, *, new_instance_id, input, new_child_workflow_instance_id, app_id)` → new `instance_id`. Omitting `input` keeps the original; passing `None` clears it. That pair is an `input` + `overwriteInput` pair on the wire, which the engine layer takes as-is; the public method collapses it into one argument via the exported `UNSET` sentinel.
 - `close()` — close gRPC connection
+
+**Staged operations.** With the `WorkflowsStagedOperations` preview feature on, a sidecar with no workflow worker connected accepts start, raise event, terminate, suspend, resume and rerun, saves them, and runs them once a worker connects. The response then carries `staged=True`. The plain methods drop it, so their signatures and return values stay as they were. Each of those six has a `*_with_result` variant that returns it: `schedule_new_workflow_with_result` → `WorkflowScheduleResult`, `raise_workflow_event_with_result` / `terminate_workflow_with_result` / `pause_workflow_with_result` / `resume_workflow_with_result` → `WorkflowOperationResult`, and `rerun_workflow_from_event_with_result` → `WorkflowRerunResult`. `staged` is False when the operation ran at once, and on sidecars that never stage. Purge is never staged and has no variant. The engine layer mirrors this with `*_orchestration*_with_result` methods on `TaskHubGrpcClient` / `AsyncTaskHubGrpcClient` that return the raw response proto; the plain engine methods call them.
 
 `get_workflow_state` converts gRPC "no such instance exists" errors to a `None` return. The other methods let the error propagate, including `get_workflow_history`, which raises NOT_FOUND for a missing or purged instance. The async variant in `aio/` has the same API with `async` methods.
 

@@ -249,6 +249,12 @@ class ActivityInvocation(_message.Message):
 
     HISTORYEVENT_FIELD_NUMBER: _builtins.int
     PROPAGATEDHISTORY_FIELD_NUMBER: _builtins.int
+    PARENTEXECUTIONID_FIELD_NUMBER: _builtins.int
+    parentExecutionId: _builtins.str
+    """Execution ID of the workflow generation that dispatched the activity.
+    Sent back with the activity's result so the workflow can reject a result
+    dispatched by another generation: task IDs restart on ContinueAsNew.
+    """
     @_builtins.property
     def historyEvent(self) -> _history_events_pb2.HistoryEvent: ...
     @_builtins.property
@@ -260,13 +266,19 @@ class ActivityInvocation(_message.Message):
         *,
         historyEvent: _history_events_pb2.HistoryEvent | None = ...,
         propagatedHistory: _history_events_pb2.PropagatedHistory | None = ...,
+        parentExecutionId: _builtins.str | None = ...,
     ) -> None: ...
-    _HasFieldArgType: _TypeAlias = _typing.Literal["_propagatedHistory", b"_propagatedHistory", "historyEvent", b"historyEvent", "propagatedHistory", b"propagatedHistory"]  # noqa: Y015
+    _HasFieldArgType: _TypeAlias = _typing.Literal["_parentExecutionId", b"_parentExecutionId", "_propagatedHistory", b"_propagatedHistory", "historyEvent", b"historyEvent", "parentExecutionId", b"parentExecutionId", "propagatedHistory", b"propagatedHistory"]  # noqa: Y015
     def HasField(self, field_name: _HasFieldArgType) -> _builtins.bool: ...
-    _ClearFieldArgType: _TypeAlias = _typing.Literal["_propagatedHistory", b"_propagatedHistory", "historyEvent", b"historyEvent", "propagatedHistory", b"propagatedHistory"]  # noqa: Y015
+    _ClearFieldArgType: _TypeAlias = _typing.Literal["_parentExecutionId", b"_parentExecutionId", "_propagatedHistory", b"_propagatedHistory", "historyEvent", b"historyEvent", "parentExecutionId", b"parentExecutionId", "propagatedHistory", b"propagatedHistory"]  # noqa: Y015
     def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
+    _WhichOneofReturnType__parentExecutionId: _TypeAlias = _typing.Literal["parentExecutionId"]  # noqa: Y015
+    _WhichOneofArgType__parentExecutionId: _TypeAlias = _typing.Literal["_parentExecutionId", b"_parentExecutionId"]  # noqa: Y015
     _WhichOneofReturnType__propagatedHistory: _TypeAlias = _typing.Literal["propagatedHistory"]  # noqa: Y015
     _WhichOneofArgType__propagatedHistory: _TypeAlias = _typing.Literal["_propagatedHistory", b"_propagatedHistory"]  # noqa: Y015
+    @_typing.overload
+    def WhichOneof(self, oneof_group: _WhichOneofArgType__parentExecutionId) -> _WhichOneofReturnType__parentExecutionId | None: ...
+    @_typing.overload
     def WhichOneof(self, oneof_group: _WhichOneofArgType__propagatedHistory) -> _WhichOneofReturnType__propagatedHistory | None: ...
 
 Global___ActivityInvocation: _TypeAlias = ActivityInvocation  # noqa: Y015
