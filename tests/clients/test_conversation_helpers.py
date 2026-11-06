@@ -1836,6 +1836,42 @@ class TestCoercionsAndBinding(unittest.TestCase):
         with self.assertRaises(ToolArgumentError):
             bind_params_to_func(k, {'p': {'x': 1, 'y': 'nope'}})
 
+    def test_none_rejected_for_required_str(self):
+        def f(name: str) -> str:
+            return name
+
+        with self.assertRaises(ToolArgumentError):
+            bind_params_to_func(f, {'name': None})
+
+    def test_none_rejected_for_required_dataclass(self):
+        @dataclass
+        class P:
+            x: int
+
+        def k(p: P) -> int:
+            return p.x
+
+        with self.assertRaises(ToolArgumentError):
+            bind_params_to_func(k, {'p': None})
+
+    def test_none_rejected_for_required_plain_class(self):
+        class C:
+            def __init__(self, level: str):
+                self.level = level
+
+        def apply(config: C) -> str:
+            return config.level
+
+        with self.assertRaises(ToolArgumentError):
+            bind_params_to_func(apply, {'config': None})
+
+    def test_none_still_allowed_for_optional(self):
+        def f(name: Optional[str]) -> Optional[str]:
+            return name
+
+        bound = bind_params_to_func(f, {'name': None})
+        self.assertIsNone(f(*bound.args, **bound.kwargs))
+
 
 class TestPlainClassSchema(unittest.TestCase):
     def test_plain_class_init_signature(self):

@@ -13,12 +13,16 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 
+import socket
+import threading
+import time
 import unittest
 import warnings
 from datetime import datetime
 from typing import Any, Union
 from unittest import mock
 
+from grpc import StatusCode
 from grpc.aio import AioRpcError
 
 from dapr.conf import settings
@@ -156,6 +160,66 @@ class WorkflowClientAioTimeoutInterceptorTest(unittest.IsolatedAsyncioTestCase):
             from dapr.aio.clients.grpc.interceptors import DaprClientTimeoutInterceptorAsync
 
             self.assertIsInstance(interceptors[0], DaprClientTimeoutInterceptorAsync)
+
+
+class SilentTcpServer:
+    """Accepts TCP connections and never answers, like a sidecar lost behind a network change."""
+
+    def __init__(self):
+        self._listener = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        self._listener.bind(('127.0.0.1', 0))
+        self._listener.listen()
+        self.port = self._listener.getsockname()[1]
+        self._connections: list[socket.socket] = []
+        self._accept_thread = threading.Thread(target=self._accept_forever, daemon=True)
+        self._accept_thread.start()
+
+    def _accept_forever(self) -> None:
+        while True:
+            try:
+                connection, _ = self._listener.accept()
+            except OSError:
+                return
+            self._connections.append(connection)
+
+    def close(self) -> None:
+        self._listener.close()
+        for connection in self._connections:
+            connection.close()
+        self._accept_thread.join(timeout=5)
+
+
+class WorkflowClientAioApiTimeoutTest(unittest.IsolatedAsyncioTestCase):
+    async def test_api_timeout_seconds_is_passed_to_interceptor(self):
+        with mock.patch(
+            'dapr.ext.workflow._durabletask.aio.client.AsyncTaskHubGrpcClient'
+        ) as mock_client_cls:
+            DaprWorkflowClient(api_timeout_seconds=2.5)
+            interceptor = mock_client_cls.call_args[1]['interceptors'][0]
+            self.assertEqual(2.5, interceptor._timeout_seconds)
+
+    async def test_non_positive_api_timeout_seconds_is_rejected(self):
+        with mock.patch('dapr.ext.workflow._durabletask.aio.client.AsyncTaskHubGrpcClient'):
+            with self.assertRaises(ValueError):
+                DaprWorkflowClient(api_timeout_seconds=-1)
+
+    @mock.patch.object(settings, 'DAPR_API_TIMEOUT_SECONDS', None)
+    async def test_call_to_unresponsive_sidecar_hits_the_deadline(self):
+        server = SilentTcpServer()
+        self.addCleanup(server.close)
+        wf_client = DaprWorkflowClient(
+            host='127.0.0.1', port=str(server.port), api_timeout_seconds=0.5
+        )
+        # The async workflow client has no public close; close its channel directly.
+        self.addAsyncCleanup(wf_client._DaprWorkflowClient__obj.aclose)
+
+        started_at = time.monotonic()
+        with self.assertRaises(AioRpcError) as raised:
+            await wf_client.get_workflow_state(mock_instance_id)
+        elapsed_seconds = time.monotonic() - started_at
+
+        self.assertEqual(StatusCode.DEADLINE_EXCEEDED, raised.exception.code())
+        self.assertLess(elapsed_seconds, 5)
 
 
 class WorkflowClientAioChannelOptionsTest(unittest.TestCase):

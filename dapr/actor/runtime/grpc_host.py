@@ -16,7 +16,7 @@ limitations under the License.
 import asyncio
 import logging
 import os
-from typing import Awaitable, Callable, Optional, Protocol, Set, Type, TypeVar
+from typing import Awaitable, Callable, Optional, Protocol, Set, Type, TypeVar, Union
 
 import grpc.aio  # type: ignore
 from grpc import StatusCode  # type: ignore[attr-defined]
@@ -35,6 +35,7 @@ from dapr.actor.runtime._grpc_callbacks import (
     build_invoke_error_payload,
     build_reminder_fire_body,
     build_timer_fire_body,
+    extract_activation_id,
     extract_reentrancy_id,
     status_code_for_exception,
 )
@@ -43,7 +44,7 @@ from dapr.actor.runtime.context import ActorRuntimeContext
 from dapr.actor.runtime.runtime import ActorRuntime
 from dapr.clients.grpc._channel import create_aio_channel
 from dapr.clients.grpc.dapr_actor_grpc_client import DaprActorGrpcClient
-from dapr.conf import settings
+from dapr.conf import _FromSettings, settings
 from dapr.proto import api_service_v1, api_v1
 from dapr.serializers import DefaultJSONSerializer, Serializer
 
@@ -60,6 +61,7 @@ _TRANSIENT_STATUS_CODES = frozenset(
 _RECONNECT_DELAY_SECONDS = 1.0
 _DRAIN_TIMEOUT_SECONDS = 5.0
 _HANDSHAKE_TIMEOUT_SECONDS = 60.0
+_HTTP_TIMEOUT_FROM_SETTINGS = _FromSettings('DAPR_HTTP_TIMEOUT_SECONDS')
 _GRPC_AIO_EOF = grpc.aio.EOF  # type: ignore[attr-defined]
 
 
@@ -144,7 +146,7 @@ class ActorGrpcHost:
     def __init__(
         self,
         address: Optional[str] = None,
-        timeout_seconds: int = settings.DAPR_HTTP_TIMEOUT_SECONDS,
+        timeout_seconds: Union[int, None, _FromSettings] = _HTTP_TIMEOUT_FROM_SETTINGS,
         app_port: Optional[int] = None,
     ):
         """Creates the host.
@@ -153,14 +155,17 @@ class ActorGrpcHost:
             address (str, optional): daprd gRPC address. Defaults to the same
                 resolution as the Dapr clients (``DAPR_GRPC_ENDPOINT``,
                 ``DAPR_RUNTIME_HOST``/``DAPR_GRPC_PORT``).
-            timeout_seconds (int): per-call timeout for the actors' outbound
-                operations (state, reminders, timers, invocations).
+            timeout_seconds (int, optional): per-call timeout for the actors' outbound
+                operations (state, reminders, timers, invocations). Defaults to
+                ``DAPR_HTTP_TIMEOUT_SECONDS``, read when the host is created.
             app_port (int, optional): port for the empty gRPC app-channel
                 listener the host starts so daprd accepts the stream. Defaults
                 to the ``APP_PORT`` env var (set by ``dapr run``). Pass ``0`` to
                 disable it when you run your own gRPC app server.
         """
         self._address = address
+        if isinstance(timeout_seconds, _FromSettings):
+            timeout_seconds = int(timeout_seconds.resolve())
         self._timeout_seconds = timeout_seconds
         self._app_port = self._resolve_app_port(app_port)
         self._channel: Optional[grpc.aio.Channel] = None
@@ -518,8 +523,14 @@ class ActorGrpcHost:
     ) -> None:
         try:
             reentrancy_id = extract_reentrancy_id(request.metadata)
+            activation_id = extract_activation_id(request.metadata)
             result = await ActorRuntime.dispatch(
-                request.actor_type, request.actor_id, request.method, request.data, reentrancy_id
+                request.actor_type,
+                request.actor_id,
+                request.method,
+                request.data,
+                reentrancy_id,
+                activation_id=activation_id,
             )
             response = api_v1.SubscribeActorEventsRequestInvokeResponseAlpha1(
                 id=request.id,
@@ -551,8 +562,13 @@ class ActorGrpcHost:
     ) -> None:
         try:
             body = build_reminder_fire_body(request)
+            activation_id = extract_activation_id(request.metadata)
             await ActorRuntime.fire_reminder(
-                request.actor_type, request.actor_id, request.name, body
+                request.actor_type,
+                request.actor_id,
+                request.name,
+                body,
+                activation_id=activation_id,
             )
         except Exception as exception:  # noqa: BLE001
             await self._send_request_failed(session, request.id, exception)
@@ -569,7 +585,14 @@ class ActorGrpcHost:
     ) -> None:
         try:
             body = build_timer_fire_body(request)
-            await ActorRuntime.fire_timer(request.actor_type, request.actor_id, request.name, body)
+            activation_id = extract_activation_id(request.metadata)
+            await ActorRuntime.fire_timer(
+                request.actor_type,
+                request.actor_id,
+                request.name,
+                body,
+                activation_id=activation_id,
+            )
         except Exception as exception:  # noqa: BLE001
             await self._send_request_failed(session, request.id, exception)
             return

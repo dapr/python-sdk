@@ -34,6 +34,9 @@ And the following extensions, installed as extras on the core `dapr` package:
 * [dapr.ext.strands](./dapr/ext/strands): Strands agent session management — `pip install "dapr[strands]"`
 * [dapr.ext.workflow](./dapr/ext/workflow): Durable workflow authoring — `pip install "dapr[workflow]"`
 
+Binary-store file uploads, streaming downloads, and deletion (Dapr 1.19 alpha) are
+available in both clients. See the [sync and async binary-store examples](./examples/binary-store).
+
 ## Getting started
 
 ### Prerequisites
@@ -117,6 +120,15 @@ cd python-sdk
 uv sync --all-packages --group dev
 ```
 
+To run `tests/examples/` or `tests/integration/` (steps 7 and 8), sync the `tests` group
+instead. It includes everything in `dev` plus the dependencies those suites need — notably
+`langchain-ollama`, which `examples/langgraph-checkpointer` imports. This is what CI installs
+for both of those jobs:
+
+```bash
+uv sync --all-packages --group tests
+```
+
 4. Run linter and autofix
 
 ```bash
@@ -137,13 +149,13 @@ uv run pytest -m "not e2e" ./tests --ignore=tests/integration --ignore=tests/exa
 uv run mypy
 ```
 
-7. Run integration tests
+7. Run integration tests (requires a Dapr runtime and the `tests` group)
 
 ```bash
 uv run pytest tests/integration/
 ```
 
-8. Validate the examples
+8. Validate the examples (requires a Dapr runtime and the `tests` group)
 
 ```bash
 uv run pytest tests/examples/

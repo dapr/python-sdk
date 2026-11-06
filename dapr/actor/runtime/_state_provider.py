@@ -51,6 +51,10 @@ class StateProvider:
         result = self._state_serializer.deserialize(raw_state_value, state_type)
         return (True, result)
 
+    def round_trip_state_value(self, value: Any) -> Any:
+        """Returns value as try_load_state would decode it after a save, without a store read."""
+        return self._state_serializer.deserialize(self._state_serializer.serialize(value), object)
+
     async def contains_state(self, actor_type: str, actor_id: str, state_name: str) -> bool:
         raw_state_value = await self._state_client.get_state(actor_type, actor_id, state_name)
         return (raw_state_value is not None) and len(raw_state_value) > 0

@@ -9,9 +9,9 @@ from google.rpc import code_pb2, error_details_pb2, status_pb2
 
 from dapr.clients import DaprGrpcClient
 from dapr.clients.exceptions import DaprGrpcError, DaprInternalError
-from dapr.conf import settings
 
 from .fake_dapr_server import FakeDaprSidecar
+from .fake_http_server import point_settings_at_http_port
 
 
 def create_expected_status():
@@ -92,20 +92,18 @@ def create_expected_status():
 
 
 class DaprExceptionsTestCase(unittest.TestCase):
-    _grpc_port = 50001
-    _http_port = 3500
+    _grpc_port: int  # set in setUpClass from the port the fake sidecar bound
+    _http_port: int
 
     @classmethod
     def setUpClass(cls):
-        cls._fake_dapr_server = FakeDaprSidecar(grpc_port=cls._grpc_port, http_port=cls._http_port)
-        settings.DAPR_HTTP_PORT = cls._http_port
-        settings.DAPR_HTTP_ENDPOINT = 'http://127.0.0.1:{}'.format(cls._http_port)
+        cls._fake_dapr_server = FakeDaprSidecar()
+        cls.addClassCleanup(cls._fake_dapr_server.stop)
         cls._fake_dapr_server.start()
+        cls._grpc_port = cls._fake_dapr_server.grpc_port
+        cls._http_port = cls._fake_dapr_server.http_port
+        point_settings_at_http_port(cls, cls._http_port)
         cls._expected_status = create_expected_status()
-
-    @classmethod
-    def tearDownClass(cls):
-        cls._fake_dapr_server.stop()
 
     def test_exception_status_parsing(self):
         dapr = DaprGrpcClient(f'localhost:{self._grpc_port}')

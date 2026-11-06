@@ -13,6 +13,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 
+import threading
 import time
 import unittest
 from unittest.mock import MagicMock, patch
@@ -20,6 +21,8 @@ from unittest.mock import MagicMock, patch
 from dapr.clients.health import DaprHealth
 from dapr.conf import settings
 from dapr.version import __version__
+
+from .fake_servers import listen_without_replying
 
 
 class DaprHealthCheckTests(unittest.TestCase):
@@ -68,10 +71,47 @@ class DaprHealthCheckTests(unittest.TestCase):
     def test_wait_for_sidecar_timeout(self, mock_urlopen):
         mock_urlopen.return_value.__enter__.return_value = MagicMock(status=500)
 
-        start = time.time()
+        start = time.monotonic()
 
         with self.assertRaises(TimeoutError):
             DaprHealth.wait_for_sidecar()
 
-        self.assertGreaterEqual(time.time() - start, 2.5)
+        # Same clock as DaprHealth. On Windows, time.time() can read a few ms less.
+        self.assertGreaterEqual(time.monotonic() - start, 2.5)
         self.assertGreater(mock_urlopen.call_count, 1)
+
+
+class DaprHealthCheckUnresponsiveSidecarTests(unittest.TestCase):
+    # How long the test waits before calling wait_for_sidecar() hung. Well above
+    # DAPR_HEALTH_TIMEOUT so a slow CI machine does not fail it.
+    HANG_LIMIT_SECONDS = 15
+
+    @patch.object(settings, 'DAPR_HEALTH_TIMEOUT', '1')
+    def test_wait_for_sidecar_times_out_when_sidecar_never_replies(self):
+        port = listen_without_replying(self)
+        outcome = {}
+
+        def wait():
+            try:
+                DaprHealth.wait_for_sidecar()
+            except Exception as error:
+                outcome['error'] = error
+
+        with (
+            patch.object(settings, 'DAPR_HTTP_ENDPOINT', f'http://127.0.0.1:{port}'),
+            patch('builtins.print') as mock_print,
+        ):
+            # Run in a daemon thread so a regression fails this test instead of hanging
+            # the whole session.
+            waiter = threading.Thread(target=wait, daemon=True)
+            start = time.monotonic()
+            waiter.start()
+            waiter.join(self.HANG_LIMIT_SECONDS)
+
+        self.assertFalse(waiter.is_alive(), 'wait_for_sidecar() blocked past DAPR_HEALTH_TIMEOUT')
+        self.assertIsInstance(outcome.get('error'), TimeoutError)
+        self.assertIn('Dapr health check timed out', str(outcome['error']))
+        self.assertLess(time.monotonic() - start, self.HANG_LIMIT_SECONDS)
+        logged = [str(call.args[0]) for call in mock_print.call_args_list if call.args]
+        self.assertTrue(any(line.endswith('failed: timed out') for line in logged), logged)
+        self.assertFalse(any(line.startswith('Unexpected error') for line in logged), logged)
