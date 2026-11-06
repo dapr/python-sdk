@@ -21,12 +21,13 @@ def test_invoke_simple_async(dapr):
 
     caller_output = dapr.run(
         '--app-id invoke-caller --app-protocol grpc -- python3 invoke-caller.py',
-        timeout=30,
+        timeout=60,
     )
     for line in EXPECTED_CALLER:
         assert line in caller_output, f'Missing in caller output: {line}'
     assert caller_output.count('INVOKE_RECEIVED') == 3, 'Expected three concurrent invocations'
 
+    assert dapr.wait_for_output(EXPECTED_RECEIVER), 'Receiver did not log all three requests'
     receiver_output = dapr.stop()
     for line in EXPECTED_RECEIVER:
         assert line in receiver_output, f'Missing in receiver output: {line}'

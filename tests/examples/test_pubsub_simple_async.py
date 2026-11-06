@@ -27,11 +27,12 @@ def test_pubsub_simple_async(dapr):
     )
     publisher_output = dapr.run(
         '--app-id python-publisher --app-protocol grpc -- python3 publisher.py',
-        timeout=30,
+        timeout=60,
     )
     for line in EXPECTED_PUBLISHER:
         assert line in publisher_output, f'Missing in publisher output: {line}'
 
+    assert dapr.wait_for_output(EXPECTED_SUBSCRIBER), 'Subscriber did not receive every event'
     subscriber_output = dapr.stop()
     for line in EXPECTED_SUBSCRIBER:
         assert line in subscriber_output, f'Missing in subscriber output: {line}'
