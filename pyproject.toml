@@ -59,7 +59,7 @@ workflow = []
 # unstructured a given user doesn't need. `pip install "dapr[rag,rag-s3,
 # rag-pgvector]"` mirrors the S3 + pgvector example in dapr/ext/rag/AGENTS.md.
 rag = [
-    "openai>=1.50.0,<2.0.0",
+    "openai>=1.50.0,<4.0.0",
 ]
 rag-langchain = [
     "langchain-core>=0.3.0,<2.0.0",
