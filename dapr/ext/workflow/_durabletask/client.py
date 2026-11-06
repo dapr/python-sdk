@@ -308,6 +308,29 @@ class TaskHubGrpcClient:
         reuse_id_policy: Optional[WorkflowIdReusePolicy] = None,
         app_id: Optional[str] = None,
     ) -> str:
+        res = self.schedule_new_orchestration_with_result(
+            orchestrator,
+            input=input,
+            instance_id=instance_id,
+            start_at=start_at,
+            app_id=app_id,
+        )
+        return res.instanceId
+
+    def schedule_new_orchestration_with_result(
+        self,
+        orchestrator: Union[task.Orchestrator[TInput, TOutput], str],
+        *,
+        input: Optional[TInput] = None,
+        instance_id: Optional[str] = None,
+        start_at: Optional[datetime] = None,
+        app_id: Optional[str] = None,
+    ) -> pb.CreateInstanceResponse:
+        """Like schedule_new_orchestration, but returns the sidecar's whole response.
+
+        The response carries ``staged`` next to the instance ID. It takes no
+        reuse_id_policy, which is deprecated and never reaches the sidecar.
+        """
         name = orchestrator if isinstance(orchestrator, str) else task.get_name(orchestrator)
 
         input_pb = (
@@ -324,8 +347,7 @@ class TaskHubGrpcClient:
         )
 
         self._logger.info(f"Starting new '{name}' instance with ID = '{req.instanceId}'.")
-        res: pb.CreateInstanceResponse = self._stub.StartInstance(req)
-        return res.instanceId
+        return self._stub.StartInstance(req)
 
     def get_orchestration_state(
         self,
@@ -524,6 +546,19 @@ class TaskHubGrpcClient:
         data: Optional[Any] = None,
         app_id: Optional[str] = None,
     ):
+        self.raise_orchestration_event_with_result(
+            instance_id, event_name, data=data, app_id=app_id
+        )
+
+    def raise_orchestration_event_with_result(
+        self,
+        instance_id: str,
+        event_name: str,
+        *,
+        data: Optional[Any] = None,
+        app_id: Optional[str] = None,
+    ) -> pb.RaiseEventResponse:
+        """Like raise_orchestration_event, but returns the sidecar's response."""
         req = pb.RaiseEventRequest(
             instanceId=instance_id,
             name=event_name,
@@ -532,7 +567,7 @@ class TaskHubGrpcClient:
         )
 
         self._logger.info(f"Raising event '{event_name}' for instance '{instance_id}'.")
-        self._stub.RaiseEvent(req)
+        return self._stub.RaiseEvent(req)
 
     def terminate_orchestration(
         self,
@@ -542,6 +577,19 @@ class TaskHubGrpcClient:
         recursive: bool = True,
         app_id: Optional[str] = None,
     ):
+        self.terminate_orchestration_with_result(
+            instance_id, output=output, recursive=recursive, app_id=app_id
+        )
+
+    def terminate_orchestration_with_result(
+        self,
+        instance_id: str,
+        *,
+        output: Optional[Any] = None,
+        recursive: bool = True,
+        app_id: Optional[str] = None,
+    ) -> pb.TerminateResponse:
+        """Like terminate_orchestration, but returns the sidecar's response."""
         req = pb.TerminateRequest(
             instanceId=instance_id,
             output=wrappers_pb2.StringValue(value=shared.to_json(output)) if output else None,
@@ -550,7 +598,7 @@ class TaskHubGrpcClient:
         )
 
         self._logger.info(f"Terminating instance '{instance_id}'.")
-        self._stub.TerminateInstance(req)
+        return self._stub.TerminateInstance(req)
 
     def suspend_orchestration(
         self,
@@ -558,12 +606,21 @@ class TaskHubGrpcClient:
         *,
         app_id: Optional[str] = None,
     ):
+        self.suspend_orchestration_with_result(instance_id, app_id=app_id)
+
+    def suspend_orchestration_with_result(
+        self,
+        instance_id: str,
+        *,
+        app_id: Optional[str] = None,
+    ) -> pb.SuspendResponse:
+        """Like suspend_orchestration, but returns the sidecar's response."""
         req = pb.SuspendRequest(
             instanceId=instance_id,
             router=new_task_router(app_id),
         )
         self._logger.info(f"Suspending instance '{instance_id}'.")
-        self._stub.SuspendInstance(req)
+        return self._stub.SuspendInstance(req)
 
     def resume_orchestration(
         self,
@@ -571,12 +628,21 @@ class TaskHubGrpcClient:
         *,
         app_id: Optional[str] = None,
     ):
+        self.resume_orchestration_with_result(instance_id, app_id=app_id)
+
+    def resume_orchestration_with_result(
+        self,
+        instance_id: str,
+        *,
+        app_id: Optional[str] = None,
+    ) -> pb.ResumeResponse:
+        """Like resume_orchestration, but returns the sidecar's response."""
         req = pb.ResumeRequest(
             instanceId=instance_id,
             router=new_task_router(app_id),
         )
         self._logger.info(f"Resuming instance '{instance_id}'.")
-        self._stub.ResumeInstance(req)
+        return self._stub.ResumeInstance(req)
 
     def purge_orchestration(
         self,
@@ -615,6 +681,29 @@ class TaskHubGrpcClient:
         new_child_instance_id: Optional[str] = None,
         app_id: Optional[str] = None,
     ) -> str:
+        res = self.rerun_orchestration_from_event_with_result(
+            instance_id,
+            event_id,
+            new_instance_id=new_instance_id,
+            input=input,
+            overwrite_input=overwrite_input,
+            new_child_instance_id=new_child_instance_id,
+            app_id=app_id,
+        )
+        return res.newInstanceID
+
+    def rerun_orchestration_from_event_with_result(
+        self,
+        instance_id: str,
+        event_id: int,
+        *,
+        new_instance_id: Optional[str] = None,
+        input: Optional[Any] = None,
+        overwrite_input: bool = False,
+        new_child_instance_id: Optional[str] = None,
+        app_id: Optional[str] = None,
+    ) -> pb.RerunWorkflowFromEventResponse:
+        """Like rerun_orchestration_from_event, but returns the sidecar's response."""
         req = _new_rerun_request(
             instance_id,
             event_id,
@@ -625,5 +714,4 @@ class TaskHubGrpcClient:
             app_id=app_id,
         )
         self._logger.info(f"Rerunning instance '{instance_id}' from event {event_id}.")
-        res: pb.RerunWorkflowFromEventResponse = self._stub.RerunWorkflowFromEvent(req)
-        return res.newInstanceID
+        return self._stub.RerunWorkflowFromEvent(req)
