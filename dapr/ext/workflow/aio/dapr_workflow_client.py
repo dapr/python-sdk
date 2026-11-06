@@ -29,6 +29,7 @@ from dapr.conf import settings
 from dapr.conf.helpers import GrpcEndpoint
 from dapr.ext.workflow._durabletask import client
 from dapr.ext.workflow._durabletask.aio import client as aioclient
+from dapr.ext.workflow.dapr_workflow_client import _workflow_name
 from dapr.ext.workflow.logger import Logger, LoggerOptions
 from dapr.ext.workflow.util import get_grpc_channel_options, getAddress
 from dapr.ext.workflow.workflow_context import Workflow
@@ -38,6 +39,11 @@ from dapr.ext.workflow.workflow_management import (
     WorkflowInstanceIdPage,
     _listing_unsupported_message,
     _unimplemented_message,
+)
+from dapr.ext.workflow.workflow_operation_result import (
+    WorkflowOperationResult,
+    WorkflowRerunResult,
+    WorkflowScheduleResult,
 )
 from dapr.ext.workflow.workflow_state import WorkflowState
 
@@ -152,12 +158,7 @@ class DaprWorkflowClient:
                 DeprecationWarning,
                 stacklevel=2,
             )
-        if isinstance(workflow, str):
-            workflow_name = workflow
-        elif hasattr(workflow, '_dapr_alternate_name'):
-            workflow_name = workflow.__dict__['_dapr_alternate_name']
-        else:
-            workflow_name = workflow.__name__
+        workflow_name = _workflow_name(workflow)
         return await self.__obj.schedule_new_orchestration(
             workflow_name,
             input=input,
@@ -166,6 +167,47 @@ class DaprWorkflowClient:
             reuse_id_policy=reuse_id_policy,
             app_id=app_id,
         )
+
+    async def schedule_new_workflow_with_result(
+        self,
+        workflow: Union[Workflow, str],
+        *,
+        input: Optional[TInput] = None,
+        instance_id: Optional[str] = None,
+        start_at: Optional[datetime] = None,
+        app_id: Optional[str] = None,
+    ) -> WorkflowScheduleResult:
+        """Schedules a new workflow instance, and reports whether the sidecar staged it.
+
+           Works like schedule_new_workflow, without the deprecated reuse_id_policy.
+
+           With the ``WorkflowsStagedOperations`` preview feature on, a sidecar that has
+           no workflow worker connected stages the start: it saves it and runs it once a
+           worker connects. The result says whether that happened.
+
+        Args:
+            workflow: The workflow to schedule. Can be a workflow callable or a workflow name string.
+            input: The optional input to pass to the scheduled workflow instance. This must be a
+            serializable value.
+            instance_id: The unique ID of the workflow instance to schedule. If not specified, a
+            new GUID value is used.
+            start_at: The time when the workflow instance should start executing.
+            If not specified or if a date-time in the past is specified, the workflow instance will
+            be scheduled immediately.
+            app_id: The optional ID of another app to schedule the workflow on. See
+            schedule_new_workflow.
+
+        Returns:
+            The ID of the scheduled workflow instance, and whether the sidecar staged the start.
+        """
+        res = await self.__obj.schedule_new_orchestration_with_result(
+            _workflow_name(workflow),
+            input=input,
+            instance_id=instance_id,
+            start_at=start_at,
+            app_id=app_id,
+        )
+        return WorkflowScheduleResult(instance_id=res.instanceId, staged=res.staged)
 
     async def get_workflow_state(
         self,
@@ -332,6 +374,37 @@ class DaprWorkflowClient:
             instance_id, event_name, data=data, app_id=app_id
         )
 
+    async def raise_workflow_event_with_result(
+        self,
+        instance_id: str,
+        event_name: str,
+        *,
+        data: Optional[Any] = None,
+        app_id: Optional[str] = None,
+    ) -> WorkflowOperationResult:
+        """Sends an event to a workflow instance, and reports whether the sidecar staged it.
+
+           Works like raise_workflow_event.
+
+           With the ``WorkflowsStagedOperations`` preview feature on, a sidecar that has
+           no workflow worker connected stages the event: it saves it and runs it once a
+           worker connects. The result says whether that happened.
+
+        Args:
+            instance_id: The ID of the workflow instance that will handle the event.
+            event_name: The name of the event. Event names are case-insensitive.
+            data: The serializable data payload to include with the event.
+            app_id: The optional ID of the app hosting the workflow instance, when it is
+            hosted by a different app. See raise_workflow_event.
+
+        Returns:
+            Whether the sidecar staged the operation.
+        """
+        res = await self.__obj.raise_orchestration_event_with_result(
+            instance_id, event_name, data=data, app_id=app_id
+        )
+        return WorkflowOperationResult(staged=res.staged)
+
     async def terminate_workflow(
         self,
         instance_id: str,
@@ -372,6 +445,37 @@ class DaprWorkflowClient:
             app_id=app_id,
         )
 
+    async def terminate_workflow_with_result(
+        self,
+        instance_id: str,
+        *,
+        output: Optional[Any] = None,
+        recursive: bool = True,
+        app_id: Optional[str] = None,
+    ) -> WorkflowOperationResult:
+        """Terminates a workflow instance, and reports whether the sidecar staged it.
+
+           Works like terminate_workflow.
+
+           With the ``WorkflowsStagedOperations`` preview feature on, a sidecar that has
+           no workflow worker connected stages the termination: it saves it and runs it once a
+           worker connects. The result says whether that happened.
+
+        Args:
+            instance_id: The ID of the workflow instance to terminate.
+            output: The optional output to set for the terminated workflow instance.
+            recursive: The optional flag to terminate all child workflows.
+            app_id: The optional ID of the app hosting the workflow instance, when it is
+            hosted by a different app. See terminate_workflow.
+
+        Returns:
+            Whether the sidecar staged the operation.
+        """
+        res = await self.__obj.terminate_orchestration_with_result(
+            instance_id, output=output, recursive=recursive, app_id=app_id
+        )
+        return WorkflowOperationResult(staged=res.staged)
+
     async def pause_workflow(
         self,
         instance_id: str,
@@ -391,6 +495,31 @@ class DaprWorkflowClient:
         """
         return await self.__obj.suspend_orchestration(instance_id, app_id=app_id)
 
+    async def pause_workflow_with_result(
+        self,
+        instance_id: str,
+        *,
+        app_id: Optional[str] = None,
+    ) -> WorkflowOperationResult:
+        """Suspends a workflow instance, and reports whether the sidecar staged it.
+
+           Works like pause_workflow.
+
+           With the ``WorkflowsStagedOperations`` preview feature on, a sidecar that has
+           no workflow worker connected stages the pause: it saves it and runs it once a
+           worker connects. The result says whether that happened.
+
+        Args:
+            instance_id: The instance ID of the workflow to suspend.
+            app_id: The optional ID of the app hosting the workflow instance, when it is
+            hosted by a different app. See pause_workflow.
+
+        Returns:
+            Whether the sidecar staged the operation.
+        """
+        res = await self.__obj.suspend_orchestration_with_result(instance_id, app_id=app_id)
+        return WorkflowOperationResult(staged=res.staged)
+
     async def resume_workflow(
         self,
         instance_id: str,
@@ -408,6 +537,31 @@ class DaprWorkflowClient:
             ignore app_id and apply the operation to the local app.
         """
         return await self.__obj.resume_orchestration(instance_id, app_id=app_id)
+
+    async def resume_workflow_with_result(
+        self,
+        instance_id: str,
+        *,
+        app_id: Optional[str] = None,
+    ) -> WorkflowOperationResult:
+        """Resumes a paused workflow instance, and reports whether the sidecar staged it.
+
+           Works like resume_workflow.
+
+           With the ``WorkflowsStagedOperations`` preview feature on, a sidecar that has
+           no workflow worker connected stages the resume: it saves it and runs it once a
+           worker connects. The result says whether that happened.
+
+        Args:
+            instance_id: The instance ID of the workflow to resume.
+            app_id: The optional ID of the app hosting the workflow instance, when it is
+            hosted by a different app. See resume_workflow.
+
+        Returns:
+            Whether the sidecar staged the operation.
+        """
+        res = await self.__obj.resume_orchestration_with_result(instance_id, app_id=app_id)
+        return WorkflowOperationResult(staged=res.staged)
 
     async def purge_workflow(
         self,
@@ -591,3 +745,51 @@ class DaprWorkflowClient:
             new_child_instance_id=new_child_workflow_instance_id,
             app_id=app_id,
         )
+
+    async def rerun_workflow_from_event_with_result(
+        self,
+        instance_id: str,
+        event_id: int,
+        *,
+        new_instance_id: Optional[str] = None,
+        input: Any = UNSET,
+        new_child_workflow_instance_id: Optional[str] = None,
+        app_id: Optional[str] = None,
+    ) -> WorkflowRerunResult:
+        """Reruns a workflow instance from an event, and reports whether the sidecar staged it.
+
+           Works like rerun_workflow_from_event.
+
+           With the ``WorkflowsStagedOperations`` preview feature on, a sidecar that has
+           no workflow worker connected stages the rerun: it saves it and runs it once a
+           worker connects. The result says whether that happened.
+
+        Args:
+            instance_id: The unique ID of the workflow instance to rerun.
+            event_id: The WorkflowHistoryEvent.event_id to resume from.
+            new_instance_id: The ID to give the new instance. Defaults to a random ID.
+            input: Replacement input for the event being rerun. Omit it to keep the
+            original input; pass None to clear it.
+            new_child_workflow_instance_id: The ID to give the new child workflow
+            instance. Only accepted when event_id names a child workflow creation event.
+            app_id: The optional ID of the app hosting the workflow instance, when it is
+            hosted by a different app. See rerun_workflow_from_event.
+
+        Returns:
+            The ID of the new workflow instance, and whether the sidecar staged the rerun.
+
+        Raises:
+            ValueError: As rerun_workflow_from_event does.
+            grpc.aio.AioRpcError: As rerun_workflow_from_event does.
+        """
+        input_supplied = input is not UNSET
+        res = await self.__obj.rerun_orchestration_from_event_with_result(
+            instance_id,
+            event_id,
+            new_instance_id=new_instance_id,
+            input=input if input_supplied else None,
+            overwrite_input=input_supplied,
+            new_child_instance_id=new_child_workflow_instance_id,
+            app_id=app_id,
+        )
+        return WorkflowRerunResult(new_instance_id=res.newInstanceID, staged=res.staged)

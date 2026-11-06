@@ -34,6 +34,11 @@ from dapr.ext.workflow.workflow_management import (
     WorkflowHistoryEventType,
     WorkflowInstanceIdPage,
 )
+from dapr.ext.workflow.workflow_operation_result import (
+    WorkflowOperationResult,
+    WorkflowRerunResult,
+    WorkflowScheduleResult,
+)
 from dapr.ext.workflow.workflow_runtime import WorkflowRuntime, alternate_name
 from dapr.ext.workflow.workflow_state import WorkflowState, WorkflowStatus
 
@@ -47,6 +52,9 @@ __all__ = [
     'WorkflowHistoryEvent',
     'WorkflowHistoryEventType',
     'WorkflowInstanceIdPage',
+    'WorkflowScheduleResult',
+    'WorkflowOperationResult',
+    'WorkflowRerunResult',
     'UNSET',
     'when_all',
     'when_any',
