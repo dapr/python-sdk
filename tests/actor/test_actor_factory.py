@@ -79,9 +79,9 @@ class ActorFactoryTests(unittest.TestCase):
         _run(self._manager.activate_actor(test_actor_id))
 
         # assert
-        self.assertEqual(test_actor_id, self._manager._active_actors[test_actor_id.id].id)
-        self.assertTrue(self._manager._active_actors[test_actor_id.id].activated)
-        self.assertFalse(self._manager._active_actors[test_actor_id.id].deactivated)
+        self.assertEqual(test_actor_id, self._manager._active_actors[test_actor_id.id].actor.id)
+        self.assertTrue(self._manager._active_actors[test_actor_id.id].actor.activated)
+        self.assertFalse(self._manager._active_actors[test_actor_id.id].actor.deactivated)
 
     def test_dispatch_success(self):
         """dispatch ActionMethod"""

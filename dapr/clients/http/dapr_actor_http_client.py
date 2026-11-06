@@ -13,6 +13,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 
+import json
 from typing import TYPE_CHECKING, Callable, Dict, Optional, Union
 
 from dapr.clients.http.helpers import get_api_url
@@ -144,6 +145,13 @@ class DaprActorHttpClient(DaprActorClientBase):
         """
         url = f'{self._get_base_url(actor_type, actor_id)}/timers/{name}'
         await self._client.send_bytes(method='DELETE', url=url, data=None)
+
+    async def get_runtime_version(self) -> str:
+        """Returns the sidecar's runtime version from the metadata API."""
+        body, _ = await self._client.send_bytes(
+            method='GET', url=f'{get_api_url()}/metadata', data=None
+        )
+        return json.loads(body).get('runtimeVersion', '')
 
     def _get_base_url(self, actor_type: str, actor_id: str) -> str:
         return '{}/actors/{}/{}'.format(get_api_url(), actor_type, actor_id)
