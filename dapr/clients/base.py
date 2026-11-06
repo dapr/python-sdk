@@ -17,6 +17,7 @@ from abc import ABC, abstractmethod
 from typing import Optional
 
 DAPR_REENTRANCY_ID_HEADER = 'Dapr-Reentrancy-Id'
+DAPR_ACTOR_ACTIVATION_ID_HEADER = 'Dapr-Actor-Activation-Id'
 
 
 class DaprActorClientBase(ABC):
@@ -50,3 +51,7 @@ class DaprActorClientBase(ABC):
 
     @abstractmethod
     async def unregister_timer(self, actor_type: str, actor_id: str, name: str) -> None: ...
+
+    async def get_runtime_version(self) -> str:
+        """Returns the sidecar's runtime version from the metadata API."""
+        raise NotImplementedError
