@@ -59,7 +59,7 @@ class StateItem:
         value: Union[bytes, str],
         etag: Optional[str] = None,
         options: Optional[StateOptions] = None,
-        metadata: Optional[Dict[str, str]] = dict(),
+        metadata: Optional[Dict[str, str]] = None,
     ):
         """Inits StateItem with the required parameters.
 
@@ -80,7 +80,7 @@ class StateItem:
         self._value = value
         self._etag = etag
         self._options = options
-        self._metadata = metadata
+        self._metadata = metadata if metadata is not None else {}
 
     @property
     def key(self):
