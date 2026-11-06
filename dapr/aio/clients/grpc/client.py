@@ -120,7 +120,7 @@ class DaprGrpcClientAsync:
 
         >>> from dapr.aio.clients import DaprClient
         >>> MAX = 64 * 1024 * 1024 # 64MB
-        >>> async with DaprClient(max_message_length=MAX) as d:
+        >>> async with DaprClient(max_grpc_message_length=MAX) as d:
         ...     resp = await d.invoke_method('callee', 'method', b'data')
     """
 
@@ -262,7 +262,7 @@ class DaprGrpcClientAsync:
                     content_type='text/plain',
                     http_verb='POST',
                     http_querystring=(
-                        ('key1', 'value1')
+                        ('key1', 'value1'),
                     ),
                 )
 
@@ -630,9 +630,8 @@ class DaprGrpcClientAsync:
             from dapr.aio.clients import DaprClient
             async with DaprClient() as d:
                 resp = await d.get_state(
-                    store_name='state_store'
+                    store_name='state_store',
                     key='key_1',
-                    state={"key": "value"},
                     state_metadata={"metakey": "metavalue"},
                 )
 
@@ -684,7 +683,7 @@ class DaprGrpcClientAsync:
             async with DaprClient() as d:
                 resp = await d.get_bulk_state(
                     store_name='state_store',
-                    keys=['key_1', key_2],
+                    keys=['key_1', 'key_2'],
                     parallelism=2,
                     states_metadata={"metakey": "metavalue"},
                 )
