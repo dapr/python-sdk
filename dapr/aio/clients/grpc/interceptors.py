@@ -19,6 +19,8 @@ from typing import List, Optional, Tuple
 from grpc.aio import (  # type: ignore
     ClientCallDetails,
     StreamStreamClientInterceptor,
+    StreamUnaryClientInterceptor,
+    UnaryStreamClientInterceptor,
     UnaryUnaryClientInterceptor,
 )
 
@@ -90,6 +92,8 @@ class DaprClientInterceptorAsync(UnaryUnaryClientInterceptor, StreamStreamClient
     """The class implements a UnaryUnaryClientInterceptor from grpc to add an interceptor to add
     additional headers to all calls as needed.
 
+    Per-call API tokens take precedence over configured tokens.
+
     Examples:
 
         interceptor = HeaderInterceptor([('header', 'value', )])
@@ -126,7 +130,10 @@ class DaprClientInterceptorAsync(UnaryUnaryClientInterceptor, StreamStreamClient
         metadata: List[Tuple[str, str]] = []
         if client_call_details.metadata is not None:
             metadata = list(client_call_details.metadata)  # type: ignore[arg-type]
-        metadata.extend(self._metadata)
+        for header in self._metadata:
+            if header[0] == 'dapr-api-token' and any(k == 'dapr-api-token' for k, _ in metadata):
+                continue
+            metadata.append(header)
 
         new_call_details = _ClientCallDetailsAsync(
             client_call_details.method,
@@ -172,3 +179,28 @@ class DaprClientInterceptorAsync(UnaryUnaryClientInterceptor, StreamStreamClient
         # Call continuation
         response = await continuation(new_call_details, request)
         return response
+
+
+class _DaprStreamingMetadataInterceptorAsync:
+    """Share metadata construction without inheriting multiple gRPC interceptor types."""
+
+    def __init__(self, metadata: List[Tuple[str, str]]):
+        self._interceptor = DaprClientInterceptorAsync(metadata)
+
+    async def _intercept(self, continuation, client_call_details, request):
+        details = await self._interceptor._intercept_call(client_call_details)
+        return await continuation(details, request)
+
+
+class _DaprUnaryStreamInterceptorAsync(
+    _DaprStreamingMetadataInterceptorAsync, UnaryStreamClientInterceptor
+):
+    async def intercept_unary_stream(self, continuation, client_call_details, request):
+        return await self._intercept(continuation, client_call_details, request)
+
+
+class _DaprStreamUnaryInterceptorAsync(
+    _DaprStreamingMetadataInterceptorAsync, StreamUnaryClientInterceptor
+):
+    async def intercept_stream_unary(self, continuation, client_call_details, request_iterator):
+        return await self._intercept(continuation, client_call_details, request_iterator)
