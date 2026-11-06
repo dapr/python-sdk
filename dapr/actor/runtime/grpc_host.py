@@ -35,6 +35,7 @@ from dapr.actor.runtime._grpc_callbacks import (
     build_invoke_error_payload,
     build_reminder_fire_body,
     build_timer_fire_body,
+    extract_activation_id,
     extract_reentrancy_id,
     status_code_for_exception,
 )
@@ -522,8 +523,14 @@ class ActorGrpcHost:
     ) -> None:
         try:
             reentrancy_id = extract_reentrancy_id(request.metadata)
+            activation_id = extract_activation_id(request.metadata)
             result = await ActorRuntime.dispatch(
-                request.actor_type, request.actor_id, request.method, request.data, reentrancy_id
+                request.actor_type,
+                request.actor_id,
+                request.method,
+                request.data,
+                reentrancy_id,
+                activation_id=activation_id,
             )
             response = api_v1.SubscribeActorEventsRequestInvokeResponseAlpha1(
                 id=request.id,
@@ -555,8 +562,13 @@ class ActorGrpcHost:
     ) -> None:
         try:
             body = build_reminder_fire_body(request)
+            activation_id = extract_activation_id(request.metadata)
             await ActorRuntime.fire_reminder(
-                request.actor_type, request.actor_id, request.name, body
+                request.actor_type,
+                request.actor_id,
+                request.name,
+                body,
+                activation_id=activation_id,
             )
         except Exception as exception:  # noqa: BLE001
             await self._send_request_failed(session, request.id, exception)
@@ -573,7 +585,14 @@ class ActorGrpcHost:
     ) -> None:
         try:
             body = build_timer_fire_body(request)
-            await ActorRuntime.fire_timer(request.actor_type, request.actor_id, request.name, body)
+            activation_id = extract_activation_id(request.metadata)
+            await ActorRuntime.fire_timer(
+                request.actor_type,
+                request.actor_id,
+                request.name,
+                body,
+                activation_id=activation_id,
+            )
         except Exception as exception:  # noqa: BLE001
             await self._send_request_failed(session, request.id, exception)
             return
