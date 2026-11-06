@@ -393,13 +393,21 @@ class CreateInstanceResponse(_message.Message):
     DESCRIPTOR: _descriptor.Descriptor
 
     INSTANCEID_FIELD_NUMBER: _builtins.int
+    STAGED_FIELD_NUMBER: _builtins.int
     instanceId: _builtins.str
+    staged: _builtins.bool
+    """staged is true when the sidecar accepted the operation but no workflow
+    worker was connected to run it. The operation is saved and runs once a
+    worker connects. False when the operation ran at once, and on sidecars
+    that do not stage operations.
+    """
     def __init__(
         self,
         *,
         instanceId: _builtins.str = ...,
+        staged: _builtins.bool = ...,
     ) -> None: ...
-    _ClearFieldArgType: _TypeAlias = _typing.Literal["instanceId", b"instanceId"]  # noqa: Y015
+    _ClearFieldArgType: _TypeAlias = _typing.Literal["instanceId", b"instanceId", "staged", b"staged"]  # noqa: Y015
     def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
 
 Global___CreateInstanceResponse: _TypeAlias = CreateInstanceResponse  # noqa: Y015
@@ -496,13 +504,22 @@ Global___RaiseEventRequest: _TypeAlias = RaiseEventRequest  # noqa: Y015
 
 @_typing.final
 class RaiseEventResponse(_message.Message):
-    """No payload"""
-
     DESCRIPTOR: _descriptor.Descriptor
 
+    STAGED_FIELD_NUMBER: _builtins.int
+    staged: _builtins.bool
+    """staged is true when the sidecar accepted the operation but no workflow
+    worker was connected to run it. The operation is saved and runs once a
+    worker connects. False when the operation ran at once, and on sidecars
+    that do not stage operations.
+    """
     def __init__(
         self,
+        *,
+        staged: _builtins.bool = ...,
     ) -> None: ...
+    _ClearFieldArgType: _TypeAlias = _typing.Literal["staged", b"staged"]  # noqa: Y015
+    def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
 
 Global___RaiseEventResponse: _TypeAlias = RaiseEventResponse  # noqa: Y015
 
@@ -544,13 +561,22 @@ Global___TerminateRequest: _TypeAlias = TerminateRequest  # noqa: Y015
 
 @_typing.final
 class TerminateResponse(_message.Message):
-    """No payload"""
-
     DESCRIPTOR: _descriptor.Descriptor
 
+    STAGED_FIELD_NUMBER: _builtins.int
+    staged: _builtins.bool
+    """staged is true when the sidecar accepted the operation but no workflow
+    worker was connected to run it. The operation is saved and runs once a
+    worker connects. False when the operation ran at once, and on sidecars
+    that do not stage operations.
+    """
     def __init__(
         self,
+        *,
+        staged: _builtins.bool = ...,
     ) -> None: ...
+    _ClearFieldArgType: _TypeAlias = _typing.Literal["staged", b"staged"]  # noqa: Y015
+    def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
 
 Global___TerminateResponse: _TypeAlias = TerminateResponse  # noqa: Y015
 
@@ -589,13 +615,22 @@ Global___SuspendRequest: _TypeAlias = SuspendRequest  # noqa: Y015
 
 @_typing.final
 class SuspendResponse(_message.Message):
-    """No payload"""
-
     DESCRIPTOR: _descriptor.Descriptor
 
+    STAGED_FIELD_NUMBER: _builtins.int
+    staged: _builtins.bool
+    """staged is true when the sidecar accepted the operation but no workflow
+    worker was connected to run it. The operation is saved and runs once a
+    worker connects. False when the operation ran at once, and on sidecars
+    that do not stage operations.
+    """
     def __init__(
         self,
+        *,
+        staged: _builtins.bool = ...,
     ) -> None: ...
+    _ClearFieldArgType: _TypeAlias = _typing.Literal["staged", b"staged"]  # noqa: Y015
+    def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
 
 Global___SuspendResponse: _TypeAlias = SuspendResponse  # noqa: Y015
 
@@ -634,13 +669,22 @@ Global___ResumeRequest: _TypeAlias = ResumeRequest  # noqa: Y015
 
 @_typing.final
 class ResumeResponse(_message.Message):
-    """No payload"""
-
     DESCRIPTOR: _descriptor.Descriptor
 
+    STAGED_FIELD_NUMBER: _builtins.int
+    staged: _builtins.bool
+    """staged is true when the sidecar accepted the operation but no workflow
+    worker was connected to run it. The operation is saved and runs once a
+    worker connects. False when the operation ran at once, and on sidecars
+    that do not stage operations.
+    """
     def __init__(
         self,
+        *,
+        staged: _builtins.bool = ...,
     ) -> None: ...
+    _ClearFieldArgType: _TypeAlias = _typing.Literal["staged", b"staged"]  # noqa: Y015
+    def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
 
 Global___ResumeResponse: _TypeAlias = ResumeResponse  # noqa: Y015
 
@@ -918,13 +962,21 @@ class RerunWorkflowFromEventResponse(_message.Message):
     DESCRIPTOR: _descriptor.Descriptor
 
     NEWINSTANCEID_FIELD_NUMBER: _builtins.int
+    STAGED_FIELD_NUMBER: _builtins.int
     newInstanceID: _builtins.str
+    staged: _builtins.bool
+    """staged is true when the sidecar accepted the operation but no workflow
+    worker was connected to run it. The operation is saved and runs once a
+    worker connects. False when the operation ran at once, and on sidecars
+    that do not stage operations.
+    """
     def __init__(
         self,
         *,
         newInstanceID: _builtins.str = ...,
+        staged: _builtins.bool = ...,
     ) -> None: ...
-    _ClearFieldArgType: _TypeAlias = _typing.Literal["newInstanceID", b"newInstanceID"]  # noqa: Y015
+    _ClearFieldArgType: _TypeAlias = _typing.Literal["newInstanceID", b"newInstanceID", "staged", b"staged"]  # noqa: Y015
     def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
 
 Global___RerunWorkflowFromEventResponse: _TypeAlias = RerunWorkflowFromEventResponse  # noqa: Y015
