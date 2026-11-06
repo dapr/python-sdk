@@ -44,6 +44,12 @@ class _WorkerCapabilityEnumTypeWrapper(_enum_type_wrapper._EnumTypeWrapper[_Work
     there. On a cache miss the worker recovers the full history via the
     GetInstanceHistory RPC, so the optimization never affects correctness.
     """
+    WORKER_CAPABILITY_HEALTH_PING: _WorkerCapability.ValueType  # 3
+    """Indicates that the worker accepts and discards WorkItem.healthPing. The
+    service then sends one periodically on the work-item stream so that
+    proxies with a stream idle timeout do not close the stream while no work
+    is due. Workers that do not advertise this never receive a health ping.
+    """
 
 class WorkerCapability(_WorkerCapability, metaclass=_WorkerCapabilityEnumTypeWrapper): ...
 
@@ -58,6 +64,12 @@ may set WorkflowRequest.cachedHistory and drop the committed-history
 prefix the worker already holds from pastEvents, leaving only the delta
 there. On a cache miss the worker recovers the full history via the
 GetInstanceHistory RPC, so the optimization never affects correctness.
+"""
+WORKER_CAPABILITY_HEALTH_PING: WorkerCapability.ValueType  # 3
+"""Indicates that the worker accepts and discards WorkItem.healthPing. The
+service then sends one periodically on the work-item stream so that
+proxies with a stream idle timeout do not close the stream while no work
+is due. Workers that do not advertise this never receive a health ping.
 """
 Global___WorkerCapability: _TypeAlias = WorkerCapability  # noqa: Y015
 
@@ -381,13 +393,21 @@ class CreateInstanceResponse(_message.Message):
     DESCRIPTOR: _descriptor.Descriptor
 
     INSTANCEID_FIELD_NUMBER: _builtins.int
+    STAGED_FIELD_NUMBER: _builtins.int
     instanceId: _builtins.str
+    staged: _builtins.bool
+    """staged is true when the sidecar accepted the operation but no workflow
+    worker was connected to run it. The operation is saved and runs once a
+    worker connects. False when the operation ran at once, and on sidecars
+    that do not stage operations.
+    """
     def __init__(
         self,
         *,
         instanceId: _builtins.str = ...,
+        staged: _builtins.bool = ...,
     ) -> None: ...
-    _ClearFieldArgType: _TypeAlias = _typing.Literal["instanceId", b"instanceId"]  # noqa: Y015
+    _ClearFieldArgType: _TypeAlias = _typing.Literal["instanceId", b"instanceId", "staged", b"staged"]  # noqa: Y015
     def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
 
 Global___CreateInstanceResponse: _TypeAlias = CreateInstanceResponse  # noqa: Y015
@@ -484,13 +504,22 @@ Global___RaiseEventRequest: _TypeAlias = RaiseEventRequest  # noqa: Y015
 
 @_typing.final
 class RaiseEventResponse(_message.Message):
-    """No payload"""
-
     DESCRIPTOR: _descriptor.Descriptor
 
+    STAGED_FIELD_NUMBER: _builtins.int
+    staged: _builtins.bool
+    """staged is true when the sidecar accepted the operation but no workflow
+    worker was connected to run it. The operation is saved and runs once a
+    worker connects. False when the operation ran at once, and on sidecars
+    that do not stage operations.
+    """
     def __init__(
         self,
+        *,
+        staged: _builtins.bool = ...,
     ) -> None: ...
+    _ClearFieldArgType: _TypeAlias = _typing.Literal["staged", b"staged"]  # noqa: Y015
+    def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
 
 Global___RaiseEventResponse: _TypeAlias = RaiseEventResponse  # noqa: Y015
 
@@ -532,13 +561,22 @@ Global___TerminateRequest: _TypeAlias = TerminateRequest  # noqa: Y015
 
 @_typing.final
 class TerminateResponse(_message.Message):
-    """No payload"""
-
     DESCRIPTOR: _descriptor.Descriptor
 
+    STAGED_FIELD_NUMBER: _builtins.int
+    staged: _builtins.bool
+    """staged is true when the sidecar accepted the operation but no workflow
+    worker was connected to run it. The operation is saved and runs once a
+    worker connects. False when the operation ran at once, and on sidecars
+    that do not stage operations.
+    """
     def __init__(
         self,
+        *,
+        staged: _builtins.bool = ...,
     ) -> None: ...
+    _ClearFieldArgType: _TypeAlias = _typing.Literal["staged", b"staged"]  # noqa: Y015
+    def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
 
 Global___TerminateResponse: _TypeAlias = TerminateResponse  # noqa: Y015
 
@@ -577,13 +615,22 @@ Global___SuspendRequest: _TypeAlias = SuspendRequest  # noqa: Y015
 
 @_typing.final
 class SuspendResponse(_message.Message):
-    """No payload"""
-
     DESCRIPTOR: _descriptor.Descriptor
 
+    STAGED_FIELD_NUMBER: _builtins.int
+    staged: _builtins.bool
+    """staged is true when the sidecar accepted the operation but no workflow
+    worker was connected to run it. The operation is saved and runs once a
+    worker connects. False when the operation ran at once, and on sidecars
+    that do not stage operations.
+    """
     def __init__(
         self,
+        *,
+        staged: _builtins.bool = ...,
     ) -> None: ...
+    _ClearFieldArgType: _TypeAlias = _typing.Literal["staged", b"staged"]  # noqa: Y015
+    def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
 
 Global___SuspendResponse: _TypeAlias = SuspendResponse  # noqa: Y015
 
@@ -622,13 +669,22 @@ Global___ResumeRequest: _TypeAlias = ResumeRequest  # noqa: Y015
 
 @_typing.final
 class ResumeResponse(_message.Message):
-    """No payload"""
-
     DESCRIPTOR: _descriptor.Descriptor
 
+    STAGED_FIELD_NUMBER: _builtins.int
+    staged: _builtins.bool
+    """staged is true when the sidecar accepted the operation but no workflow
+    worker was connected to run it. The operation is saved and runs once a
+    worker connects. False when the operation ran at once, and on sidecars
+    that do not stage operations.
+    """
     def __init__(
         self,
+        *,
+        staged: _builtins.bool = ...,
     ) -> None: ...
+    _ClearFieldArgType: _TypeAlias = _typing.Literal["staged", b"staged"]  # noqa: Y015
+    def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
 
 Global___ResumeResponse: _TypeAlias = ResumeResponse  # noqa: Y015
 
@@ -770,28 +826,42 @@ class WorkItem(_message.Message):
 
     WORKFLOWREQUEST_FIELD_NUMBER: _builtins.int
     ACTIVITYREQUEST_FIELD_NUMBER: _builtins.int
+    HEALTHPING_FIELD_NUMBER: _builtins.int
     COMPLETIONTOKEN_FIELD_NUMBER: _builtins.int
     completionToken: _builtins.str
     @_builtins.property
     def workflowRequest(self) -> Global___WorkflowRequest: ...
     @_builtins.property
     def activityRequest(self) -> Global___ActivityRequest: ...
+    @_builtins.property
+    def healthPing(self) -> Global___HealthPing: ...
     def __init__(
         self,
         *,
         workflowRequest: Global___WorkflowRequest | None = ...,
         activityRequest: Global___ActivityRequest | None = ...,
+        healthPing: Global___HealthPing | None = ...,
         completionToken: _builtins.str = ...,
     ) -> None: ...
-    _HasFieldArgType: _TypeAlias = _typing.Literal["activityRequest", b"activityRequest", "request", b"request", "workflowRequest", b"workflowRequest"]  # noqa: Y015
+    _HasFieldArgType: _TypeAlias = _typing.Literal["activityRequest", b"activityRequest", "healthPing", b"healthPing", "request", b"request", "workflowRequest", b"workflowRequest"]  # noqa: Y015
     def HasField(self, field_name: _HasFieldArgType) -> _builtins.bool: ...
-    _ClearFieldArgType: _TypeAlias = _typing.Literal["activityRequest", b"activityRequest", "completionToken", b"completionToken", "request", b"request", "workflowRequest", b"workflowRequest"]  # noqa: Y015
+    _ClearFieldArgType: _TypeAlias = _typing.Literal["activityRequest", b"activityRequest", "completionToken", b"completionToken", "healthPing", b"healthPing", "request", b"request", "workflowRequest", b"workflowRequest"]  # noqa: Y015
     def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
-    _WhichOneofReturnType_request: _TypeAlias = _typing.Literal["workflowRequest", "activityRequest"]  # noqa: Y015
+    _WhichOneofReturnType_request: _TypeAlias = _typing.Literal["workflowRequest", "activityRequest", "healthPing"]  # noqa: Y015
     _WhichOneofArgType_request: _TypeAlias = _typing.Literal["request", b"request"]  # noqa: Y015
     def WhichOneof(self, oneof_group: _WhichOneofArgType_request) -> _WhichOneofReturnType_request | None: ...
 
 Global___WorkItem: _TypeAlias = WorkItem  # noqa: Y015
+
+@_typing.final
+class HealthPing(_message.Message):
+    DESCRIPTOR: _descriptor.Descriptor
+
+    def __init__(
+        self,
+    ) -> None: ...
+
+Global___HealthPing: _TypeAlias = HealthPing  # noqa: Y015
 
 @_typing.final
 class CompleteTaskResponse(_message.Message):
@@ -892,13 +962,21 @@ class RerunWorkflowFromEventResponse(_message.Message):
     DESCRIPTOR: _descriptor.Descriptor
 
     NEWINSTANCEID_FIELD_NUMBER: _builtins.int
+    STAGED_FIELD_NUMBER: _builtins.int
     newInstanceID: _builtins.str
+    staged: _builtins.bool
+    """staged is true when the sidecar accepted the operation but no workflow
+    worker was connected to run it. The operation is saved and runs once a
+    worker connects. False when the operation ran at once, and on sidecars
+    that do not stage operations.
+    """
     def __init__(
         self,
         *,
         newInstanceID: _builtins.str = ...,
+        staged: _builtins.bool = ...,
     ) -> None: ...
-    _ClearFieldArgType: _TypeAlias = _typing.Literal["newInstanceID", b"newInstanceID"]  # noqa: Y015
+    _ClearFieldArgType: _TypeAlias = _typing.Literal["newInstanceID", b"newInstanceID", "staged", b"staged"]  # noqa: Y015
     def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
 
 Global___RerunWorkflowFromEventResponse: _TypeAlias = RerunWorkflowFromEventResponse  # noqa: Y015

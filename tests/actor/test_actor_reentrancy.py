@@ -19,7 +19,6 @@ from unittest import mock
 
 from dapr.actor.runtime.config import ActorReentrancyConfig, ActorRuntimeConfig
 from dapr.actor.runtime.runtime import ActorRuntime
-from dapr.conf import settings
 from dapr.serializers import DefaultJSONSerializer
 from tests.actor.fake_actor_classes import (
     FakeMultiInterfacesActor,
@@ -27,19 +26,16 @@ from tests.actor.fake_actor_classes import (
     FakeSlowReentrantActor,
 )
 from tests.actor.utils import _run
-from tests.clients.fake_http_server import FakeHttpServer
+from tests.clients.fake_http_server import FakeHttpServer, point_settings_at_http_port
 
 
 class ActorRuntimeTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
-        cls.server = FakeHttpServer(3500)
+        cls.server = FakeHttpServer()
+        cls.addClassCleanup(cls.server.shutdown_server)
         cls.server.start()
-        settings.DAPR_HTTP_PORT = 3500
-
-    @classmethod
-    def tearDownClass(cls):
-        cls.server.shutdown_server()
+        point_settings_at_http_port(cls, cls.server.get_port())
 
     def setUp(self):
         ActorRuntime._actor_managers = {}
@@ -153,7 +149,7 @@ class ActorRuntimeTests(unittest.TestCase):
 
             mocked.assert_called_with(
                 method='POST',
-                url=f'http://127.0.0.1:3500/v1.0/actors/{actor}/test-id/method/{method}',
+                url=f'http://127.0.0.1:{self.server.get_port()}/v1.0/actors/{actor}/test-id/method/{method}',
                 data=None,
                 headers={'Dapr-Reentrancy-Id': reentrancy_id},
             )
@@ -197,7 +193,7 @@ class ActorRuntimeTests(unittest.TestCase):
 
             mocked.assert_called_with(
                 method='POST',
-                url=f'http://127.0.0.1:3500/v1.0/actors/{actor}/test-id/method/{method}',
+                url=f'http://127.0.0.1:{self.server.get_port()}/v1.0/actors/{actor}/test-id/method/{method}',
                 data=None,
                 headers={},
             )
@@ -238,7 +234,12 @@ class ActorRuntimeTests(unittest.TestCase):
                 data=request_body,
             )
             mocked.assert_called_with(
-                actor_type_name, actor_id, method_name, request_body, reentrancy_id
+                actor_type_name,
+                actor_id,
+                method_name,
+                request_body,
+                reentrancy_id,
+                activation_id=None,
             )
 
     def test_parse_incoming_reentrancy_header_fastapi(self):
@@ -272,5 +273,10 @@ class ActorRuntimeTests(unittest.TestCase):
                 data=request_body,
             )
             mocked.assert_called_with(
-                actor_type_name, actor_id, method_name, request_body, reentrancy_id
+                actor_type_name,
+                actor_id,
+                method_name,
+                request_body,
+                reentrancy_id,
+                activation_id=None,
             )

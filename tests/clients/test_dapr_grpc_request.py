@@ -27,6 +27,29 @@ from dapr.proto import api_v1, common_v1
 
 
 class InvokeMethodRequestTests(unittest.TestCase):
+    def test_patch_http_verb(self):
+        req = InvokeMethodRequest(data=b'{"name": "updated"}')
+
+        req.http_verb = 'PATCH'
+
+        self.assertEqual('PATCH', req.http_verb)
+        self.assertTrue(req.is_http())
+
+    def test_invalid_http_verb(self):
+        req = InvokeMethodRequest()
+
+        with self.assertRaises(ValueError):
+            req.http_verb = 'INVALID'
+
+    def test_clear_http_verb(self):
+        req = InvokeMethodRequest()
+        req.http_verb = 'POST'
+
+        req.http_verb = None
+
+        self.assertIsNone(req.http_verb)
+        self.assertFalse(req.is_http())
+
     def test_bytes_data(self):
         # act
         req = InvokeMethodRequest(data=b'hello dapr')

@@ -8,7 +8,7 @@ Sizing notes for the worker's concurrency knobs.
 | --- | --- | --- |
 | `maximum_concurrent_activity_work_items` | `100 × cpu_count` | Async semaphore cap on in-flight activity work items. |
 | `maximum_concurrent_orchestration_work_items` | `100 × cpu_count` | Same, for orchestrations. |
-| `maximum_thread_pool_workers` | `cpu_count + 4` | Worker thread pool size. Sync activities run on this pool, and async-activity gRPC response sends also borrow a thread from it. |
+| `maximum_thread_pool_workers` | `cpu_count + 4` | Size of each of the worker's two thread pools. Sync activities and async-activity gRPC response sends share one; orchestrator work items run on the other. |
 
 A `def` activity consumes a semaphore slot **and** a thread pool worker. An
 `async def` activity consumes only a semaphore slot.
@@ -46,7 +46,13 @@ backpressure.
 
 ## Sizing the thread pool
 
-The worker thread pool, sized by `maximum_thread_pool_workers`, has two uses.
+`maximum_thread_pool_workers` sizes two pools: the activity pool described below,
+and a separate pool for orchestrator work items, so blocked activities cannot starve
+orchestrations. A worker can therefore start up to `2 × maximum_thread_pool_workers`
+threads (`2 × (cpu_count + 4)` by default); count both when sizing for memory or a
+thread limit.
+
+The activity pool has two uses.
 
 **Sync activity execution.** Each `def` activity holds one thread for its
 duration. Size to peak concurrent sync-activity count.

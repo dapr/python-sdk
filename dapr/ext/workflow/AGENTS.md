@@ -15,6 +15,7 @@ dapr/ext/workflow/
 ├── workflow_activity_context.py       # WorkflowActivityContext wrapper
 ├── workflow_state.py                  # WorkflowState, WorkflowStatus enum
 ├── workflow_management.py             # WorkflowHistoryEvent(Type), WorkflowInstanceIdPage
+├── workflow_operation_result.py       # Results of the *_with_result client methods (staged)
 ├── retry_policy.py                    # RetryPolicy wrapper
 ├── util.py                            # gRPC address resolution
 ├── logger/options.py                  # LoggerOptions
@@ -27,6 +28,7 @@ tests/ext/workflow/
 ├── test_workflow_client.py            # Sync client (mock gRPC)
 ├── test_workflow_management.py        # list/history/rerun on both clients
 ├── test_workflow_client_aio.py        # Async client (IsolatedAsyncioTestCase)
+├── test_workflow_staged.py            # *_with_result methods against a fake gRPC sidecar
 ├── test_workflow_runtime.py           # Registration, decorators, worker readiness
 ├── test_workflow_util.py              # Address resolution
 └── durabletask/                       # Vendored durabletask engine tests (pytest)
@@ -93,6 +95,9 @@ from dapr.ext.workflow import (
     WorkflowInstanceIdPage,  # One page of instance IDs plus the continuation token
     FailureDetails,  # Error carried by WorkflowHistoryEvent / TaskFailedError
     UNSET,  # Sentinel default for rerun_workflow_from_event's input
+    WorkflowScheduleResult,  # instance_id + staged, from schedule_new_workflow_with_result
+    WorkflowOperationResult,  # staged, from raise/terminate/pause/resume *_with_result
+    WorkflowRerunResult,  # new_instance_id + staged, from rerun_workflow_from_event_with_result
 )
 
 # Async client:
@@ -120,14 +125,16 @@ Activities can be either `def my_activity(ctx, inp)` or `async def my_activity(c
 
 At dispatch time (the gRPC stream loop in `_durabletask/worker.py`), `is_async_callable(activity_fn)` on the wrapper selects between two handlers.
 
-- **Async activities** go through `_execute_activity_async`, then `_ActivityExecutor.execute_async`, which awaits `fn(...)` directly on the event loop. The gRPC response is delivered via `loop.run_in_executor(self._async_worker_manager.thread_pool, stub.CompleteActivityTask, ...)` — the same pool sync activities use, sized by `maximum_thread_pool_workers`.
+- **Async activities** go through `_execute_activity_async`, then `_ActivityExecutor.execute_async`, which awaits `fn(...)` directly on the event loop. The gRPC response is delivered via `loop.run_in_executor(self._async_worker_manager.thread_pool, self._deliver_activity_response, ...)` — the same pool sync activities use, sized by `maximum_thread_pool_workers`.
+
+**One channel for the worker's lifetime.** `start()` opens the gRPC channel and `stop()` closes it; gRPC reconnects it on its own, so when the work-item stream ends the run loop only sends a new `Hello` and `GetWorkItems`. Every call goes through `_sidecar_stub()`, which keeps `stop()` from closing the channel while a call is starting on it (with interceptors, grpcio crashes with SIGSEGV on a call started on a closed channel). Result sends use `wait_for_ready=True` with the `_RESULT_SEND_TIMEOUT` deadline, so a result that is ready during a reconnect waits for the channel instead of failing fast.
 - **Sync activities** go through `_execute_activity`, dispatched to the thread pool by `_AsyncWorkerManager._run_func`. The activity runs on a worker thread, and the response is delivered from the same thread.
 
 Workflow (orchestrator) functions must remain generators (`def` with `yield`). They cannot be `async def` because durabletask's deterministic replay depends on synchronous generator semantics. Only activities support async.
 
 **Decorator ordering gotcha.** Wrapping `@wfr.activity` over `@alternate_name(...)` over `async def` works because `@alternate_name` now emits an `async def innerfn` when the wrapped function is async. A user-written decorator that wraps an async function in a sync `def` (without `@functools.wraps` exposing `__wrapped__`) defeats `_is_async_callable`, routes the activity to the sync path, and produces an un-awaited coroutine. Such decorators should use `@functools.wraps(fn)` so the unwrap walks through them.
 
-**`maximum_thread_pool_workers` covers both paths.** This knob sizes the worker thread pool used for sync-activity bodies and for async-activity gRPC response sends. Mixed workloads with long-running sync activities can starve async response delivery (and vice versa) since they share the pool — size to the sum of peak sync activity concurrency and peak in-flight async response sends.
+**`maximum_thread_pool_workers` covers both paths.** This knob sizes the worker thread pool used for sync-activity bodies and for async-activity gRPC response sends. Mixed workloads with long-running sync activities can starve async response delivery (and vice versa) since they share the pool — size to the sum of peak sync activity concurrency and peak in-flight async response sends. Orchestrator work items run on a separate pool of the same size, so activities that block (for example one that schedules a workflow and waits for it to start, which needs that workflow's first orchestrator work item to run on this worker) cannot starve them.
 
 **Concurrency sizing and load characterization.** See `docs/concurrency.md` for sizing recommendations (`maximum_concurrent_activity_work_items`, `maximum_thread_pool_workers`) and an async-vs-sync decision tree. `tests/ext/workflow/durabletask/test_async_dispatch_regression.py` (marked `perf`) guards the core invariant: a batch of async activities overlaps on the event loop instead of serializing through the thread pool.
 
@@ -137,6 +144,8 @@ Workflow (orchestrator) functions must remain generators (`def` with `yield`). T
 ### DaprWorkflowClient (`dapr_workflow_client.py`)
 
 Client for workflow lifecycle management:
+
+Constructor: `DaprWorkflowClient(host, port, logger_options, max_grpc_message_length, api_timeout_seconds)`. `api_timeout_seconds` is a default deadline for this client's unary calls; it overrides `DAPR_API_TIMEOUT_SECONDS` for this client only, through `DaprClientTimeoutInterceptor(timeout_seconds)`. `None` falls back to that setting, then to no deadline. Calls that set their own timeout keep it, and `wait_for_workflow_start` / `wait_for_workflow_completion` are never given it (`_UNBOUNDED_WAIT_METHODS`); their `timeout_in_seconds` bounds them.
 
 - `schedule_new_workflow(workflow, *, input, instance_id, start_at, reuse_id_policy)` → returns `instance_id`. `reuse_id_policy` is deprecated (no effect, emits `DeprecationWarning`): an instance ID can always be reused once the existing instance is in a terminal state.
 - `get_workflow_state(instance_id, *, fetch_payloads=True)` → `Optional[WorkflowState]`
@@ -152,6 +161,8 @@ Client for workflow lifecycle management:
 - `rerun_workflow_from_event(instance_id, event_id, *, new_instance_id, input, new_child_workflow_instance_id, app_id)` → new `instance_id`. Omitting `input` keeps the original; passing `None` clears it. That pair is an `input` + `overwriteInput` pair on the wire, which the engine layer takes as-is; the public method collapses it into one argument via the exported `UNSET` sentinel.
 - `close()` — close gRPC connection
 
+**Staged operations.** With the `WorkflowsStagedOperations` preview feature on, a sidecar with no workflow worker connected accepts start, raise event, terminate, suspend, resume and rerun, saves them, and runs them once a worker connects. The response then carries `staged=True`. The plain methods drop it, so their signatures and return values stay as they were. Each of those six has a `*_with_result` variant that returns it: `schedule_new_workflow_with_result` → `WorkflowScheduleResult`, `raise_workflow_event_with_result` / `terminate_workflow_with_result` / `pause_workflow_with_result` / `resume_workflow_with_result` → `WorkflowOperationResult`, and `rerun_workflow_from_event_with_result` → `WorkflowRerunResult`. `staged` is False when the operation ran at once, and on sidecars that never stage. Purge is never staged and has no variant. The engine layer mirrors this with `*_orchestration*_with_result` methods on `TaskHubGrpcClient` / `AsyncTaskHubGrpcClient` that return the raw response proto; the plain engine methods call them.
+
 `get_workflow_state` converts gRPC "no such instance exists" errors to a `None` return. The other methods let the error propagate, including `get_workflow_history`, which raises NOT_FOUND for a missing or purged instance. The async variant in `aio/` has the same API with `async` methods.
 
 ### DaprWorkflowContext (`dapr_workflow_context.py`)
@@ -164,6 +175,7 @@ Passed to workflow functions as the first argument:
 - `create_timer(fire_at)` → `Task` (accepts `datetime` or `timedelta`)
 - `wait_for_external_event(name)` → `Task`
 - `set_custom_status(status)` / `continue_as_new(new_input, *, save_events)`
+- `new_guid()` → `uuid.UUID` — deterministic across workflow replays
 
 Module-level functions:
 - `when_all(tasks)` → `WhenAllTask` — wait for all tasks to complete

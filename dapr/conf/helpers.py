@@ -40,8 +40,12 @@ class GrpcEndpoint:
 
         if self._parsed_url.scheme in ['http', 'https']:
             self._scheme = URIParseConfig.DEFAULT_SCHEME
+            tls = str(self._parsed_url.scheme == 'https').lower()
             warn(
-                'http and https schemes are deprecated for grpc, use myhost?tls=false or myhost?tls=true instead'
+                f'http and https schemes are deprecated for grpc, use '
+                f'{self._hostname}:{self._parsed_url.port or URIParseConfig.DEFAULT_PORT}?tls={tls} instead',
+                DeprecationWarning,
+                stacklevel=3,
             )
             return
 
@@ -55,6 +59,11 @@ class GrpcEndpoint:
         return self._scheme
 
     def _set_hostname(self):
+        if self._parsed_url.scheme == 'unix':
+            # netloc + path keeps the filesystem path's case; parsed_url.hostname lowercases it.
+            self._hostname = f'{self._parsed_url.netloc}{self._parsed_url.path}'
+            return
+
         if self._parsed_url.hostname is None:
             self._hostname = URIParseConfig.DEFAULT_HOSTNAME
             return
@@ -171,8 +180,17 @@ class GrpcEndpoint:
     def tls(self) -> bool:
         return self._tls
 
+    def _is_unix_socket_path(self) -> bool:
+        """Whether this is a unix socket whose file path urlparse put in ``path``."""
+        return self._parsed_url.scheme == 'unix' and bool(self._parsed_url.path)
+
     def _validate_path_and_query(self) -> None:
-        if self._parsed_url.path:
+        if self._url.startswith('unix://') and self._parsed_url.netloc:
+            raise ValueError(
+                f"unix:// endpoints require an absolute path: '{self._url}'; "
+                'use unix:relative or unix:///absolute'
+            )
+        if self._parsed_url.path and not self._is_unix_socket_path():
             raise ValueError(
                 f"paths are not supported for gRPC endpoints: '{self._parsed_url.path}'"
             )

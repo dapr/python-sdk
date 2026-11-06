@@ -13,6 +13,9 @@ on:
   workflow_dispatch:
   merge_group:
 
+permissions:
+  contents: read
+
 jobs:
   lint:
     runs-on: ubuntu-latest
@@ -23,7 +26,7 @@ jobs:
       with:
         python-version: '3.10'
     - name: Install uv
-      uses: astral-sh/setup-uv@v10.2.0
+      uses: astral-sh/setup-uv@v10.3.0
     - name: Install dependencies
       run: uv sync --frozen --all-packages --group dev
     - name: Run Autoformatter
@@ -94,7 +97,7 @@ jobs:
       with:
         python-version: ${{ matrix.python_version }}
     - name: Install uv
-      uses: astral-sh/setup-uv@v10.2.0
+      uses: astral-sh/setup-uv@v10.3.0
     - name: Install dependencies
       run: uv sync --frozen --all-packages --group dev
     - name: Run unit-tests
