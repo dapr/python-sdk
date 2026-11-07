@@ -25,13 +25,17 @@ skipped otherwise.
 """
 
 import asyncio
+import contextlib
 import json
 import time
+import uuid
 
+import httpx
 import pytest
 
 from dapr.actor import ActorId, ActorProxy
 from tests.actor_grpc_utils import actor_stream_supported
+from tests.wait_utils import wait_until
 
 GRPC_PORT = 13531
 HTTP_PORT = 3531
@@ -39,6 +43,10 @@ APP_PORT = 9131
 
 ACTOR_TYPE = 'GrpcIntegrationActor'
 ACTOR_ID = 'integration-1'
+
+TURN_ACTOR_TYPE = 'TurnHoldingActor'
+CANCELLED_CALLS = 5
+CANCEL_AFTER_SECONDS = 0.3
 
 
 def _invoke(method: str, data: bytes = None):
@@ -108,6 +116,25 @@ def test_timer_fires_over_stream(actor_host):
     finally:
         _invoke('StopTimer')
     assert evidence == {'n': 7}
+
+
+def test_call_cancelled_by_its_caller_keeps_the_turn(actor_host):
+    """daprd hands the actor to the next call as soon as a caller gives up, while the
+    abandoned call is still running in the app; the app must not start the next one."""
+    actor_id = uuid.uuid4().hex
+    actor_url = f'http://127.0.0.1:{HTTP_PORT}/v1.0/actors/{TURN_ACTOR_TYPE}/{actor_id}/method'
+
+    for _ in range(CANCELLED_CALLS):
+        with contextlib.suppress(httpx.TimeoutException):
+            httpx.post(f'{actor_url}/HoldTurn', timeout=CANCEL_AFTER_SECONDS)
+
+    def settled_turns():
+        turns = httpx.post(f'{actor_url}/GetTurns', timeout=30).json()
+        settled = turns['started'] > 0 and turns['completed'] == turns['started']
+        return turns if settled and turns['running'] == 0 else None
+
+    turns = wait_until(settled_turns, timeout=30, interval=0.5)
+    assert turns['max_running'] == 1
 
 
 def test_idle_actor_is_deactivated_and_reactivates(actor_host):

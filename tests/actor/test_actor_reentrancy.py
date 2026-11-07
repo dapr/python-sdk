@@ -15,9 +15,14 @@ limitations under the License.
 
 import asyncio
 import unittest
+from typing import Optional
 from unittest import mock
 
-from dapr.actor.runtime.config import ActorReentrancyConfig, ActorRuntimeConfig
+from dapr.actor.runtime.config import (
+    ActorReentrancyConfig,
+    ActorRuntimeConfig,
+    ActorTypeConfig,
+)
 from dapr.actor.runtime.runtime import ActorRuntime
 from dapr.serializers import DefaultJSONSerializer
 from tests.actor.fake_actor_classes import (
@@ -280,3 +285,47 @@ class ActorRuntimeTests(unittest.TestCase):
                 reentrancy_id,
                 activation_id=None,
             )
+
+    def _reentrancy_id_for_turn(self, config: ActorRuntimeConfig) -> Optional[str]:
+        ActorRuntime.set_actor_config(config)
+        manager = ActorRuntime._actor_managers[FakeReentrantActor.__name__]
+        manager_dispatch = mock.AsyncMock(return_value=b'')
+
+        with mock.patch.object(manager, 'dispatch', manager_dispatch):
+            _run(
+                ActorRuntime.dispatch(
+                    FakeReentrantActor.__name__,
+                    'test-id',
+                    'ReentrantMethod',
+                    b'',
+                    reentrancy_id='chain',
+                )
+            )
+
+        return manager_dispatch.await_args.kwargs['reentrancy_id']
+
+    def test_turn_reentrancy_follows_the_global_config(self):
+        enabled = ActorRuntimeConfig(reentrancy=ActorReentrancyConfig(enabled=True))
+        disabled = ActorRuntimeConfig(reentrancy=None)
+
+        self.assertEqual('chain', self._reentrancy_id_for_turn(enabled))
+        self.assertIsNone(self._reentrancy_id_for_turn(disabled))
+
+    def test_turn_reentrancy_uses_only_the_actor_type_config_when_present(self):
+        actor_type = FakeReentrantActor.__name__
+        type_enabled = ActorTypeConfig(actor_type, reentrancy=ActorReentrancyConfig(enabled=True))
+        type_disabled = ActorTypeConfig(actor_type, reentrancy=ActorReentrancyConfig(enabled=False))
+        type_unset = ActorTypeConfig(actor_type)
+        global_reentrancy = ActorReentrancyConfig(enabled=True)
+
+        enabled_for_type = ActorRuntimeConfig(actor_type_configs=[type_enabled])
+        disabled_for_type = ActorRuntimeConfig(
+            reentrancy=global_reentrancy, actor_type_configs=[type_disabled]
+        )
+        unset_for_type = ActorRuntimeConfig(
+            reentrancy=global_reentrancy, actor_type_configs=[type_unset]
+        )
+
+        self.assertEqual('chain', self._reentrancy_id_for_turn(enabled_for_type))
+        self.assertIsNone(self._reentrancy_id_for_turn(disabled_for_type))
+        self.assertIsNone(self._reentrancy_id_for_turn(unset_for_type))
