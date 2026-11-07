@@ -285,7 +285,7 @@ class AsyncTaskHubGrpcClient:
                     raise _TransientTimeout()
                 if TaskHubGrpcClient._is_deadline_cancellation(code, deadline):
                     raise _TransientTimeout()
-                if code not in self._TRANSIENT_RPC_CODES:
+                if not TaskHubGrpcClient._is_transient_rpc_error(rpc_error):
                     raise
 
                 now = time.monotonic()
