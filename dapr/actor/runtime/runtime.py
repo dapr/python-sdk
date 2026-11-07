@@ -140,7 +140,8 @@ class ActorRuntime:
             actor_method_name (str): the method name that is dispatched.
             request_body (bytes): the body of request that is passed to actor method arguments.
             reentrancy_id (str): reentrancy ID obtained from the dapr_reentrancy_id header
-                if present.
+                if present. A call with the running turn's ID enters that turn only when
+                reentrancy is enabled for the actor type.
             activation_id (str, optional): the Dapr-Actor-Activation-Id header value.
 
         Returns:
@@ -154,8 +155,13 @@ class ActorRuntime:
         if not manager:
             raise ValueError(f'{actor_type_name} is not registered.')
         activation_id = await cls._trusted_activation_id(manager, activation_id)
+        reentrancy_id_for_turn = reentrancy_id if cls._reentrancy_enabled(actor_type_name) else None
         return await manager.dispatch(
-            ActorId(actor_id), actor_method_name, request_body, activation_id
+            ActorId(actor_id),
+            actor_method_name,
+            request_body,
+            activation_id,
+            reentrancy_id=reentrancy_id_for_turn,
         )
 
     @classmethod
@@ -227,6 +233,23 @@ class ActorRuntime:
     def get_actor_config(cls) -> ActorRuntimeConfig:
         """Gets :class:`ActorRuntimeConfig`."""
         return cls._actor_config
+
+    @classmethod
+    def _reentrancy_enabled(cls, actor_type_name: str) -> bool:
+        """Resolves reentrancy as daprd does: a type with its own config uses only that config."""
+        type_config = next(
+            (
+                config
+                for config in cls._actor_config.actor_type_configs
+                if config.actor_type == actor_type_name
+            ),
+            None,
+        )
+        if type_config is None:
+            reentrancy = cls._actor_config.reentrancy
+        else:
+            reentrancy = type_config.reentrancy
+        return reentrancy is not None and reentrancy.enabled
 
     @classmethod
     async def _get_actor_manager(cls, actor_type_name: str) -> Optional[ActorManager]:
