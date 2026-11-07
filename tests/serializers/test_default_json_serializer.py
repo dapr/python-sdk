@@ -77,6 +77,18 @@ class DefaultJSONSerializerTests(unittest.TestCase):
             ),
         )
 
+    def test_deserialize_string_starting_with_date(self):
+        serializer = DefaultJSONSerializer()
+        payload = (
+            b'{"note":"2024-01-01 meeting notes","file":"2024-01-01_backup.tar",'
+            b'"when":"2024-01-01T01:00:00Z"}'
+        )
+
+        obj = serializer.deserialize(payload)
+        self.assertEqual(obj['note'], '2024-01-01 meeting notes')
+        self.assertEqual(obj['file'], '2024-01-01_backup.tar')
+        self.assertTrue(isinstance(obj['when'], datetime.datetime))
+
 
 if __name__ == '__main__':
     unittest.main()
