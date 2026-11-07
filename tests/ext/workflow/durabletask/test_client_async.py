@@ -27,10 +27,10 @@ METADATA = [('key1', 'value1'), ('key2', 'value2')]
 INTERCEPTORS_AIO = [DefaultClientInterceptorImpl(METADATA)]
 
 
-def _make_async_rpc_error(code: grpc.StatusCode) -> grpc.RpcError:
+def _make_async_rpc_error(code: grpc.StatusCode, details: str | None = None) -> grpc.RpcError:
     err = grpc.RpcError()
     err.code = lambda: code  # type: ignore[method-assign]
-    err.details = lambda: f'simulated {code.name}'  # type: ignore[method-assign]
+    err.details = lambda: details or f'simulated {code.name}'  # type: ignore[method-assign]
     return err
 
 
@@ -222,6 +222,71 @@ def test_aio_channel_passes_base_options_and_max_lengths():
         assert ('grpc.max_send_message_length', 4321) in opts
         assert ('grpc.max_receive_message_length', 8765) in opts
         assert ('grpc.primary_user_agent', 'durabletask-aio-tests') in opts
+
+
+async def test_async_wait_for_completion_retries_actor_closed_then_succeeds(monkeypatch):
+    """A deactivated workflow actor is transient: retry until it re-activates.
+
+    Async mirror of the sync client behavior for dapr/dapr-agents#520.
+    """
+    from dapr.ext.workflow._durabletask.internal.protos import (
+        ORCHESTRATION_STATUS_COMPLETED,
+        GetInstanceResponse,
+        WorkflowState,
+    )
+
+    response = GetInstanceResponse()
+    response.exists = True
+    state = WorkflowState()
+    state.instanceId = 'test-instance'
+    state.workflowStatus = ORCHESTRATION_STATUS_COMPLETED
+    response.workflowState.CopyFrom(state)
+
+    sleeps = []
+
+    async def fake_sleep(seconds):
+        sleeps.append(seconds)
+
+    monkeypatch.setattr('dapr.ext.workflow._durabletask.aio.client.asyncio.sleep', fake_sleep)
+
+    calls = {'n': 0}
+
+    async def fake_call(*args, **kwargs):
+        calls['n'] += 1
+        if calls['n'] == 1:
+            raise _make_async_rpc_error(
+                grpc.StatusCode.UNKNOWN, 'actor is closed, cannot handle deactivated'
+            )
+        return response
+
+    client = AsyncTaskHubGrpcClient()
+    client._stub = Mock()
+    client._stub.WaitForInstanceCompletion = fake_call
+
+    result = await client.wait_for_orchestration_completion('test-instance', timeout=10)
+
+    assert result is not None
+    assert calls['n'] == 2
+    assert len(sleeps) == 1 and sleeps[0] > 0
+
+
+async def test_async_wait_for_completion_other_unknown_error_propagates(monkeypatch):
+    """Only the 'actor is closed' UNKNOWN error is transient; others propagate."""
+
+    async def fake_sleep(seconds):
+        raise AssertionError('must not retry a non-transient error')
+
+    monkeypatch.setattr('dapr.ext.workflow._durabletask.aio.client.asyncio.sleep', fake_sleep)
+
+    async def fake_call(*args, **kwargs):
+        raise _make_async_rpc_error(grpc.StatusCode.UNKNOWN, 'stream terminated unexpectedly')
+
+    client = AsyncTaskHubGrpcClient()
+    client._stub = Mock()
+    client._stub.WaitForInstanceCompletion = fake_call
+
+    with pytest.raises(grpc.RpcError):
+        await client.wait_for_orchestration_completion('test-instance', timeout=10)
 
 
 async def test_cancelled_after_deadline_surfaces_as_timeout():

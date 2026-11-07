@@ -445,6 +445,23 @@ class TaskHubGrpcClient:
         grpc.StatusCode.UNAVAILABLE,
     )
 
+    # A workflow actor can be deactivated (e.g. idle scale-to-zero) while a
+    # wait call is in flight. The runtime reports this as a generic UNKNOWN
+    # error whose details name the closed actor. The workflow itself keeps
+    # executing and the actor is re-activated on demand, so it is safe to
+    # retry like the placement errors above.
+    _ACTOR_CLOSED_DETAIL = 'actor is closed'
+
+    @classmethod
+    def _is_transient_rpc_error(cls, rpc_error: grpc.RpcError) -> bool:
+        """Report whether a workflow-runtime gRPC error is safe to retry."""
+        code = rpc_error.code()
+        if code in cls._TRANSIENT_RPC_CODES:
+            return True
+        return code == grpc.StatusCode.UNKNOWN and cls._ACTOR_CLOSED_DETAIL in (
+            rpc_error.details() or ''
+        )
+
     # When the caller sets no timeout (timeout=0), bound how long we keep
     # retrying *consecutive* transient errors so a permanently-unavailable
     # sidecar surfaces the original error instead of hanging forever. This
@@ -496,7 +513,7 @@ class TaskHubGrpcClient:
                     raise _TransientTimeout()
                 if self._is_deadline_cancellation(code, deadline):
                     raise _TransientTimeout()
-                if code not in self._TRANSIENT_RPC_CODES:
+                if not self._is_transient_rpc_error(rpc_error):
                     raise
 
                 now = time.monotonic()
