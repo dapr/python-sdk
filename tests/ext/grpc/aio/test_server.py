@@ -19,6 +19,7 @@ out: servicer registration, the aio context coroutines, and graceful shutdown.
 import asyncio
 import contextlib
 import socket
+import sys
 import unittest
 
 import grpc.aio
@@ -325,6 +326,14 @@ class AppLoopBindingTests(unittest.TestCase):
     because the behaviour under test is precisely what happens across separate loops.
     """
 
+    # On Windows, grpc.aio's poller thread posts completions to the loop itself, and a late
+    # one aimed at the closed first loop raises in that thread and kills it, hanging every
+    # later grpc.aio call in the process. Linux and macOS deliver completions differently.
+    @unittest.skipIf(
+        sys.platform == 'win32',
+        'grpc.aio can post a late completion to the closed first loop on Windows, '
+        'killing its poller thread and hanging later grpc tests',
+    )
     def test_reuse_on_a_second_loop_after_a_clean_stop(self):
         app = App()
         port_one, port_two = _free_port(), _free_port()
