@@ -76,6 +76,7 @@ Common component types used in examples: `state.redis`, `pubsub.redis`, `lock.re
 | Example | Pattern | SDK packages | Has components |
 |---------|---------|-------------|----------------|
 | `invoke-simple` | Client-server (receiver/caller) | `dapr[grpc]` | No |
+| `invoke-simple-async` | Client-server, asyncio app + async client | `dapr[grpc]` | No |
 | `invoke-custom-data` | Client-server (protobuf) | `dapr[grpc]` | No |
 | `invoke-http` | Client-server (Flask) | `dapr`, Flask | No |
 | `invoke-binding` | Client with bindings | `dapr[grpc]` | Yes |
@@ -85,6 +86,7 @@ Common component types used in examples: `state.redis`, `pubsub.redis`, `lock.re
 | Example | Pattern | SDK packages | Has components |
 |---------|---------|-------------|----------------|
 | `pubsub-simple` | Client-server (publisher/subscriber) | `dapr[grpc]` | No |
+| `pubsub-simple-async` | Client-server, asyncio subscriber app | `dapr[grpc]` | No |
 | `pubsub-streaming` | Streaming pub/sub | `dapr` (base only) | No |
 | `pubsub-streaming-async` | Async streaming pub/sub | `dapr` (base only) | No |
 
