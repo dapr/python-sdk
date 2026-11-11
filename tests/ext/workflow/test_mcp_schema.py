@@ -14,8 +14,9 @@ limitations under the License.
 """
 
 import unittest
+from typing import List, Optional
 
-from pydantic import BaseModel
+from pydantic import BaseModel, ValidationError
 
 from dapr.ext.workflow.mcp_schema import create_pydantic_model_from_schema
 
@@ -151,6 +152,29 @@ class TestAnyOfOneOf(unittest.TestCase):
         instance = Model(count=5)
         self.assertEqual(instance.count, 5)
 
+    def test_anyof_array_variant(self):
+        schema = {
+            'type': 'object',
+            'properties': {
+                'tags': {
+                    'anyOf': [
+                        {'type': 'array', 'items': {'type': 'integer'}},
+                        {'type': 'null'},
+                    ]
+                }
+            },
+            'required': ['tags'],
+        }
+        Model = create_pydantic_model_from_schema(schema, 'ArrayVariantModel')
+        instance = Model(tags=[1, 2, 3])
+        self.assertEqual(instance.tags, [1, 2, 3])
+        instance2 = Model(tags=None)
+        self.assertIsNone(instance2.tags)
+        # Items type must survive: a bare `list` would accept ['x'].
+        self.assertEqual(Model.model_fields['tags'].annotation, Optional[List[int]])
+        with self.assertRaises(ValidationError):
+            Model(tags=['x'])
+
 
 class TestKwargsUnwrapping(unittest.TestCase):
     """Tests for the kwargs wrapper unwrapping pattern."""
@@ -227,6 +251,12 @@ class TestEmptyAndEdgeCases(unittest.TestCase):
         }
         Model = create_pydantic_model_from_schema(schema, 'SubclassCheck')
         self.assertTrue(issubclass(Model, BaseModel))
+
+    def test_invalid_schema_raises_value_error(self):
+        schema = {'type': 'object', 'properties': {'x': 'not-a-dict'}}
+        with self.assertRaises(ValueError) as ctx:
+            create_pydantic_model_from_schema(schema, 'InvalidModel')
+        self.assertIn('Invalid schema', str(ctx.exception))
 
     def test_model_name_set(self):
         schema = {
