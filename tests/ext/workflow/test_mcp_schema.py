@@ -14,8 +14,9 @@ limitations under the License.
 """
 
 import unittest
+from typing import List, Optional
 
-from pydantic import BaseModel
+from pydantic import BaseModel, ValidationError
 
 from dapr.ext.workflow.mcp_schema import create_pydantic_model_from_schema
 
@@ -169,6 +170,10 @@ class TestAnyOfOneOf(unittest.TestCase):
         self.assertEqual(instance.tags, [1, 2, 3])
         instance2 = Model(tags=None)
         self.assertIsNone(instance2.tags)
+        # Items type must survive: a bare `list` would accept ['x'].
+        self.assertEqual(Model.model_fields['tags'].annotation, Optional[List[int]])
+        with self.assertRaises(ValidationError):
+            Model(tags=['x'])
 
 
 class TestKwargsUnwrapping(unittest.TestCase):
