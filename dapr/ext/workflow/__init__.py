@@ -40,6 +40,13 @@ from dapr.ext.workflow.workflow_operation_result import (
     WorkflowScheduleResult,
 )
 from dapr.ext.workflow.workflow_runtime import WorkflowRuntime, alternate_name
+from dapr.ext.workflow.workflow_schedule import (
+    WorkflowSchedule,
+    WorkflowSchedulePage,
+    WorkflowScheduleRun,
+    WorkflowScheduleState,
+    WorkflowScheduleStatus,
+)
 from dapr.ext.workflow.workflow_state import WorkflowState, WorkflowStatus
 
 __all__ = [
@@ -55,6 +62,11 @@ __all__ = [
     'WorkflowScheduleResult',
     'WorkflowOperationResult',
     'WorkflowRerunResult',
+    'WorkflowSchedule',
+    'WorkflowSchedulePage',
+    'WorkflowScheduleRun',
+    'WorkflowScheduleState',
+    'WorkflowScheduleStatus',
     'UNSET',
     'when_all',
     'when_any',

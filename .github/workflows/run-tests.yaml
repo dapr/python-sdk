@@ -129,7 +129,7 @@ jobs:
           uv run pytest tests/integration/ -m "not dapr_head"
       - name: Validate examples
         run: |
-          uv run pytest tests/examples/
+          uv run pytest tests/examples/ -m "not dapr_head"
 
   validate-binary-store:
     runs-on: ubuntu-latest
@@ -190,9 +190,10 @@ jobs:
   # The stateful-history delta path (dapr/durabletask-go#110, reaching dapr via
   # dapr/dapr#10142) is not in any release yet, so the matrix above cannot
   # exercise it. This job builds daprd from master and runs the workflow suites
-  # against it. It also runs the vendored durabletask e2e tests, which nothing
-  # else does: build.yaml deselects `-m e2e`, and the validate job above only
-  # covers tests/integration and tests/examples.
+  # against it, along with the other `dapr_head` integration tests and examples
+  # (such as workflow schedules). It also runs the vendored durabletask e2e
+  # tests, which nothing else does: build.yaml deselects `-m e2e`, and the
+  # validate job above skips `dapr_head`.
   validate-dapr-head:
     runs-on: ubuntu-latest
     env:
@@ -265,9 +266,12 @@ jobs:
         with:
           commit: ${{ github.event.inputs.daprdapr_commit || 'master' }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
-      - name: Run stateful-history integration tests
+      - name: Run dapr-head integration tests
         run: |
           uv run pytest tests/integration/ -m dapr_head -v
+      - name: Run dapr-head examples
+        run: |
+          uv run pytest tests/examples/ -m dapr_head -v
       # These drive a bare TaskHubGrpcWorker rather than the DaprTestEnvironment
       # fixture, so they need a sidecar of their own and take its address from
       # DAPR_GRPC_ENDPOINT.

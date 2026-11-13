@@ -5,6 +5,7 @@ import warnings
 
 from google.protobuf import empty_pb2 as google_dot_protobuf_dot_empty__pb2
 from dapr.ext.workflow._durabletask.internal import orchestrator_service_pb2 as orchestrator__service__pb2
+from dapr.ext.workflow._durabletask.internal import workflow_schedule_pb2 as workflow__schedule__pb2
 
 GRPC_GENERATED_VERSION = '1.81.1'
 GRPC_VERSION = grpc.__version__
@@ -119,6 +120,31 @@ class TaskHubSidecarServiceStub:
                 '/TaskHubSidecarService/GetInstanceHistory',
                 request_serializer=orchestrator__service__pb2.GetInstanceHistoryRequest.SerializeToString,
                 response_deserializer=orchestrator__service__pb2.GetInstanceHistoryResponse.FromString,
+                _registered_method=True)
+        self.CreateWorkflowSchedule = channel.unary_unary(
+                '/TaskHubSidecarService/CreateWorkflowSchedule',
+                request_serializer=workflow__schedule__pb2.CreateWorkflowScheduleRequest.SerializeToString,
+                response_deserializer=workflow__schedule__pb2.CreateWorkflowScheduleResponse.FromString,
+                _registered_method=True)
+        self.GetWorkflowSchedule = channel.unary_unary(
+                '/TaskHubSidecarService/GetWorkflowSchedule',
+                request_serializer=workflow__schedule__pb2.GetWorkflowScheduleRequest.SerializeToString,
+                response_deserializer=workflow__schedule__pb2.GetWorkflowScheduleResponse.FromString,
+                _registered_method=True)
+        self.ListWorkflowSchedules = channel.unary_unary(
+                '/TaskHubSidecarService/ListWorkflowSchedules',
+                request_serializer=workflow__schedule__pb2.ListWorkflowSchedulesRequest.SerializeToString,
+                response_deserializer=workflow__schedule__pb2.ListWorkflowSchedulesResponse.FromString,
+                _registered_method=True)
+        self.DeleteWorkflowSchedule = channel.unary_unary(
+                '/TaskHubSidecarService/DeleteWorkflowSchedule',
+                request_serializer=workflow__schedule__pb2.DeleteWorkflowScheduleRequest.SerializeToString,
+                response_deserializer=workflow__schedule__pb2.DeleteWorkflowScheduleResponse.FromString,
+                _registered_method=True)
+        self.TriggerWorkflowSchedule = channel.unary_unary(
+                '/TaskHubSidecarService/TriggerWorkflowSchedule',
+                request_serializer=workflow__schedule__pb2.TriggerWorkflowScheduleRequest.SerializeToString,
+                response_deserializer=workflow__schedule__pb2.TriggerWorkflowScheduleResponse.FromString,
                 _registered_method=True)
 
 
@@ -239,6 +265,38 @@ class TaskHubSidecarServiceServicer:
         context.set_details('Method not implemented!')
         raise NotImplementedError('Method not implemented!')
 
+    def CreateWorkflowSchedule(self, request, context):
+        """Workflow schedules start a workflow on a cron schedule. See
+        workflow_schedule.proto.
+        """
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
+    def GetWorkflowSchedule(self, request, context):
+        """Missing associated documentation comment in .proto file."""
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
+    def ListWorkflowSchedules(self, request, context):
+        """Missing associated documentation comment in .proto file."""
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
+    def DeleteWorkflowSchedule(self, request, context):
+        """Missing associated documentation comment in .proto file."""
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
+    def TriggerWorkflowSchedule(self, request, context):
+        """Missing associated documentation comment in .proto file."""
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
 
 def add_TaskHubSidecarServiceServicer_to_server(servicer, server):
     rpc_method_handlers = {
@@ -326,6 +384,31 @@ def add_TaskHubSidecarServiceServicer_to_server(servicer, server):
                     servicer.GetInstanceHistory,
                     request_deserializer=orchestrator__service__pb2.GetInstanceHistoryRequest.FromString,
                     response_serializer=orchestrator__service__pb2.GetInstanceHistoryResponse.SerializeToString,
+            ),
+            'CreateWorkflowSchedule': grpc.unary_unary_rpc_method_handler(
+                    servicer.CreateWorkflowSchedule,
+                    request_deserializer=workflow__schedule__pb2.CreateWorkflowScheduleRequest.FromString,
+                    response_serializer=workflow__schedule__pb2.CreateWorkflowScheduleResponse.SerializeToString,
+            ),
+            'GetWorkflowSchedule': grpc.unary_unary_rpc_method_handler(
+                    servicer.GetWorkflowSchedule,
+                    request_deserializer=workflow__schedule__pb2.GetWorkflowScheduleRequest.FromString,
+                    response_serializer=workflow__schedule__pb2.GetWorkflowScheduleResponse.SerializeToString,
+            ),
+            'ListWorkflowSchedules': grpc.unary_unary_rpc_method_handler(
+                    servicer.ListWorkflowSchedules,
+                    request_deserializer=workflow__schedule__pb2.ListWorkflowSchedulesRequest.FromString,
+                    response_serializer=workflow__schedule__pb2.ListWorkflowSchedulesResponse.SerializeToString,
+            ),
+            'DeleteWorkflowSchedule': grpc.unary_unary_rpc_method_handler(
+                    servicer.DeleteWorkflowSchedule,
+                    request_deserializer=workflow__schedule__pb2.DeleteWorkflowScheduleRequest.FromString,
+                    response_serializer=workflow__schedule__pb2.DeleteWorkflowScheduleResponse.SerializeToString,
+            ),
+            'TriggerWorkflowSchedule': grpc.unary_unary_rpc_method_handler(
+                    servicer.TriggerWorkflowSchedule,
+                    request_deserializer=workflow__schedule__pb2.TriggerWorkflowScheduleRequest.FromString,
+                    response_serializer=workflow__schedule__pb2.TriggerWorkflowScheduleResponse.SerializeToString,
             ),
     }
     generic_handler = grpc.method_handlers_generic_handler(
@@ -787,6 +870,141 @@ class TaskHubSidecarService:
             '/TaskHubSidecarService/GetInstanceHistory',
             orchestrator__service__pb2.GetInstanceHistoryRequest.SerializeToString,
             orchestrator__service__pb2.GetInstanceHistoryResponse.FromString,
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+            _registered_method=True)
+
+    @staticmethod
+    def CreateWorkflowSchedule(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(
+            request,
+            target,
+            '/TaskHubSidecarService/CreateWorkflowSchedule',
+            workflow__schedule__pb2.CreateWorkflowScheduleRequest.SerializeToString,
+            workflow__schedule__pb2.CreateWorkflowScheduleResponse.FromString,
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+            _registered_method=True)
+
+    @staticmethod
+    def GetWorkflowSchedule(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(
+            request,
+            target,
+            '/TaskHubSidecarService/GetWorkflowSchedule',
+            workflow__schedule__pb2.GetWorkflowScheduleRequest.SerializeToString,
+            workflow__schedule__pb2.GetWorkflowScheduleResponse.FromString,
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+            _registered_method=True)
+
+    @staticmethod
+    def ListWorkflowSchedules(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(
+            request,
+            target,
+            '/TaskHubSidecarService/ListWorkflowSchedules',
+            workflow__schedule__pb2.ListWorkflowSchedulesRequest.SerializeToString,
+            workflow__schedule__pb2.ListWorkflowSchedulesResponse.FromString,
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+            _registered_method=True)
+
+    @staticmethod
+    def DeleteWorkflowSchedule(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(
+            request,
+            target,
+            '/TaskHubSidecarService/DeleteWorkflowSchedule',
+            workflow__schedule__pb2.DeleteWorkflowScheduleRequest.SerializeToString,
+            workflow__schedule__pb2.DeleteWorkflowScheduleResponse.FromString,
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+            _registered_method=True)
+
+    @staticmethod
+    def TriggerWorkflowSchedule(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(
+            request,
+            target,
+            '/TaskHubSidecarService/TriggerWorkflowSchedule',
+            workflow__schedule__pb2.TriggerWorkflowScheduleRequest.SerializeToString,
+            workflow__schedule__pb2.TriggerWorkflowScheduleResponse.FromString,
             options,
             channel_credentials,
             insecure,

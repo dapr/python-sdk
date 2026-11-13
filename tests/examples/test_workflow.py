@@ -109,3 +109,21 @@ def test_workflow_management(dapr):
     # The [rerunnable] marker renders at end of line, so the TASK_FAILED expectation
     # above stays a substring even if that event were wrongly marked rerunnable.
     assert 'got 0 [rerunnable]' not in output
+
+
+EXPECTED_WORKFLOW_SCHEDULE = [
+    '*** created schedule report-every-2s',
+    '*** triggered run finished: status=COMPLETED result="report for eu"',
+    '*** schedule finished: state=COMPLETED runs=3',
+    '*** list: schedule present=True',
+    '*** runs: 3',
+    '*** deleted the schedule and purged its runs',
+]
+
+
+@pytest.mark.dapr_head
+@pytest.mark.example_dir('workflow')
+def test_workflow_schedule(dapr):
+    output = dapr.run('--app-id workflow-schedule -- python3 workflow_schedule.py', timeout=90)
+    for line in EXPECTED_WORKFLOW_SCHEDULE:
+        assert line in output, f'Missing in output: {line}'
