@@ -39,12 +39,20 @@ REMINDER_METHOD_NAME = 'receive_reminder'
 class _ActiveActor:
     """An actor object and the daprd activation it belongs to."""
 
-    __slots__ = ('actor', 'activation_id', 'replaced')
+    __slots__ = (
+        'actor',
+        'activation_id',
+        'replaced',
+        'deactivation_requested',
+        'deactivation_error',
+    )
 
     def __init__(self, actor: Actor, activation_id: Optional[str]) -> None:
         self.actor = actor
         self.activation_id = activation_id
         self.replaced = False
+        self.deactivation_requested = False
+        self.deactivation_error: Optional[Exception] = None
 
     def mark_replaced(self) -> None:
         """Marks the object as belonging to an older activation, so it can no longer save."""
@@ -77,6 +85,7 @@ class ActorManager:
         self._active_actors: Dict[str, _ActiveActor] = {}
         self._activating: Dict[str, _ActiveActor] = {}
         self._detached: Dict[str, List[_ActiveActor]] = {}
+        self._deactivating: Dict[str, List[_ActiveActor]] = {}
         self._admissions: Dict[str, _Admission] = {}
         self._tickets = itertools.count(1)
 
@@ -96,19 +105,26 @@ class ActorManager:
         """Deactivates actor once the calls queued ahead of the deactivation finish.
 
         The actor is unregistered straight away, so the running call can no longer save its state.
-        An activation made by a call queued ahead of the deactivation is deactivated as well.
+        A running activation is never registered, and an activation made by a call queued ahead
+        of the deactivation is deactivated as well. If hooks fail, the latest error is raised:
+        an earlier turn has already logged the error of the object it deactivated.
         """
         with self._active_actors_lock:
-            detached_on_arrival = self._detach(actor_id.id)
+            requested_on_arrival = self._request_deactivation(actor_id.id)
         async with self._turn_lock.turn(actor_id.id):
             with self._active_actors_lock:
-                detached_in_turn = self._detach(actor_id.id)
-            deactivated = [
-                active for active in (detached_on_arrival, detached_in_turn) if active is not None
-            ]
-            await self._deactivate_detached(actor_id, deactivated)
-        if not deactivated:
+                requested_in_turn = self._request_deactivation(actor_id.id)
+            requested = requested_on_arrival + requested_in_turn
+            await self._deactivate_detached(actor_id, requested)
+        if not requested:
             raise ValueError(f'{actor_id} is not activated')
+        requested_errors = [
+            active.deactivation_error
+            for active in requested
+            if active.deactivation_error is not None
+        ]
+        if requested_errors:
+            raise requested_errors[-1]
 
     async def fire_reminder(
         self,
@@ -273,19 +289,28 @@ class ActorManager:
             self._raise_if_superseded(actor_id, activation_id, ticket)
             self._activating[actor_id.id] = active
         try:
-            await actor._on_activate_internal(lambda: not active.replaced)
+            await actor._on_activate_internal(
+                lambda: not (active.replaced or active.deactivation_requested)
+            )
         finally:
             with self._active_actors_lock:
                 self._activating.pop(actor_id.id, None)
 
         with self._active_actors_lock:
             replaced = active.replaced or self._is_superseded(actor_id.id, activation_id, ticket)
-            if not replaced:
+            deactivated = active.deactivation_requested and not replaced
+            if deactivated:
+                self._detached.setdefault(actor_id.id, []).append(active)
+            elif not replaced:
                 self._active_actors[actor_id.id] = active
         if replaced:
             await self._deactivate_discarded(actor_id, actor)
             raise DaprInternalError(
                 f'{actor_id} was replaced by a newer activation during this activation'
+            )
+        if deactivated:
+            raise DaprInternalError(
+                f'{actor_id} was deactivated during this activation, the call was not run'
             )
         return active
 
@@ -336,14 +361,27 @@ class ActorManager:
         pending = self._activating.get(actor_key)
         if pending is not None and pending.activation_id != activation_id:
             pending.mark_replaced()
-        for detached in self._detached.get(actor_key, []):
-            if detached.activation_id != activation_id:
-                detached.mark_replaced()
+        unregistered = self._detached.get(actor_key, []) + self._deactivating.get(actor_key, [])
+        for active in unregistered:
+            if active.activation_id != activation_id:
+                active.mark_replaced()
         registered = self._active_actors.get(actor_key)
         if registered is None or registered.activation_id == activation_id:
             return
         registered.mark_replaced()
         self._detach(actor_key)
+
+    def _request_deactivation(self, actor_key: str) -> List[_ActiveActor]:
+        """Detaches the registered object and stops a running activation from registering."""
+        requested: List[_ActiveActor] = []
+        pending = self._activating.get(actor_key)
+        if pending is not None and not pending.deactivation_requested:
+            pending.deactivation_requested = True
+            requested.append(pending)
+        registered = self._detach(actor_key)
+        if registered is not None:
+            requested.append(registered)
+        return requested
 
     def _detach(self, actor_key: str) -> Optional[_ActiveActor]:
         detached = self._active_actors.pop(actor_key, None)
@@ -354,20 +392,37 @@ class ActorManager:
     async def _deactivate_detached(
         self, actor_id: ActorId, owned: Sequence[_ActiveActor] = ()
     ) -> None:
-        """Deactivates objects detached since the last turn, raising only for ``owned`` ones."""
+        """Deactivates objects detached since the last turn.
+
+        They stay visible to a newer activation until their hooks finish, so it can still refuse
+        their saves. An error from an object that was not replaced is kept on it for the
+        deactivation that requested it. Other errors, and those of objects not in ``owned``, are
+        logged.
+        """
         with self._active_actors_lock:
             detached = self._detached.pop(actor_id.id, [])
-        owned_error: Optional[Exception] = None
-        for active in detached:
-            try:
-                await active.actor._on_deactivate_internal()
-            except Exception as exception:  # noqa: BLE001
-                if active in owned and not active.replaced:
-                    owned_error = exception
-                    continue
+            if not detached:
+                return
+            self._deactivating[actor_id.id] = detached
+        try:
+            for active in detached:
+                await self._deactivate_detached_object(actor_id, active, owned)
+        finally:
+            with self._active_actors_lock:
+                self._deactivating.pop(actor_id.id, None)
+
+    async def _deactivate_detached_object(
+        self, actor_id: ActorId, active: _ActiveActor, owned: Sequence[_ActiveActor]
+    ) -> None:
+        try:
+            await active.actor._on_deactivate_internal()
+        except Exception as exception:  # noqa: BLE001
+            if active.replaced:
                 logger.exception('Deactivating detached object for %s failed', actor_id)
-        if owned_error is not None:
-            raise owned_error
+                return
+            active.deactivation_error = exception
+            if active not in owned:
+                logger.exception('Deactivating detached object for %s failed', actor_id)
 
     def _ensure_still_registered(self, actor_id: ActorId, actor: Actor) -> None:
         active = self._active_actors.get(actor_id.id)

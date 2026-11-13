@@ -667,6 +667,19 @@ class SaveOnDeactivateActor(AppendActor):
         await self._state_manager.save_state()
 
 
+class GatedSaveOnDeactivateActor(SaveOnDeactivateActor):
+    def __init__(self, ctx, actor_id):
+        super().__init__(ctx, actor_id)
+        self.deactivate_started: Optional[asyncio.Event] = None
+        self.deactivate_release: Optional[asyncio.Event] = None
+
+    async def _on_deactivate(self) -> None:
+        if self.deactivate_started is not None and self.deactivate_release is not None:
+            self.deactivate_started.set()
+            await self.deactivate_release.wait()
+        await super()._on_deactivate()
+
+
 class ActorManagerDiscardedSaveTests(unittest.TestCase):
     def setUp(self):
         self._serializer = DefaultJSONSerializer()
@@ -727,10 +740,48 @@ class ActorManagerDiscardedSaveTests(unittest.TestCase):
 
         self.assertEqual(['x', 'b'], self._stored_items())
 
+    def test_new_activation_refuses_the_save_of_a_running_deactivation(self):
+        type_info = ActorTypeInformation.create(GatedSaveOnDeactivateActor)
+        ctx = ActorRuntimeContext(type_info, self._serializer, self._serializer, self._client)
+        self._manager = ActorManager(ctx)
+
+        async def scenario() -> None:
+            await self._append('x', 'act-1')
+            actor_stale: GatedSaveOnDeactivateActor = self._manager._active_actors[
+                self._actor_id.id
+            ].actor
+            actor_stale.deactivate_started = asyncio.Event()
+            actor_stale.deactivate_release = asyncio.Event()
+            deactivation = asyncio.ensure_future(self._manager.deactivate_actor(self._actor_id))
+            await asyncio.wait_for(actor_stale.deactivate_started.wait(), 5)
+            newer_task = asyncio.ensure_future(self._append('b', 'act-2'))
+            await _let_pending_tasks_run()
+
+            actor_stale.deactivate_release.set()
+            await asyncio.wait_for(asyncio.gather(deactivation, newer_task), 5)
+
+        with self.assertLogs('dapr.actor.runtime.manager', level='ERROR'):
+            _run(scenario())
+
+        self.assertEqual(['x', 'b'], self._stored_items())
+        self.assertEqual({}, self._manager._deactivating)
+
 
 class RaisingDeactivateActor(AppendActor):
     async def _on_deactivate(self) -> None:
         raise RuntimeError('deactivate failed')
+
+
+class FailingDeactivateActor(AppendActor):
+    error_for_new_objects: Optional[Exception] = None
+
+    def __init__(self, ctx, actor_id):
+        super().__init__(ctx, actor_id)
+        self.deactivate_error = FailingDeactivateActor.error_for_new_objects
+
+    async def _on_deactivate(self) -> None:
+        if self.deactivate_error is not None:
+            raise self.deactivate_error
 
 
 class ActorManagerConcurrentActivationTests(unittest.TestCase):
@@ -796,6 +847,30 @@ class ActorManagerConcurrentActivationTests(unittest.TestCase):
         _run(scenario())
 
         self.assertEqual(['x', 'init', 'b'], json.loads(self._client.store['items']))
+
+    def test_deactivation_during_activation_skips_the_activation_save(self):
+        manager = self._manager_for(GatedActivateWriteActor)
+        self._client.store['items'] = json.dumps(['x']).encode('utf-8')
+
+        async def scenario() -> None:
+            GatedActivateActor.activation_started = asyncio.Event()
+            release = asyncio.Event()
+            GatedActivateActor.activation_release = release
+            late_task = asyncio.ensure_future(self._append(manager, 'a', 'act-A'))
+            await asyncio.wait_for(GatedActivateActor.activation_started.wait(), 5)
+
+            deactivation = asyncio.ensure_future(manager.deactivate_actor(ActorId('race')))
+            await _let_pending_tasks_run()
+            release.set()
+
+            with self.assertRaises(DaprInternalError):
+                await asyncio.wait_for(late_task, 5)
+            await asyncio.wait_for(deactivation, 5)
+
+        _run(scenario())
+
+        self.assertNotIn('race', manager._active_actors)
+        self.assertEqual(['x'], json.loads(self._client.store['items']))
 
     def test_same_id_call_waits_for_the_running_activation(self):
         manager = self._manager_for(GatedActivateActor)
@@ -1163,6 +1238,110 @@ class ActorManagerTurnTests(unittest.TestCase):
             _run(manager.deactivate_actor(self._actor_id))
 
         self.assertNotIn(self._actor_id.id, manager._active_actors)
+
+    def _deactivate_behind_a_queued_call(
+        self, error_first: Exception, error_second: Optional[Exception]
+    ) -> Tuple[BaseException, List[Optional[BaseException]]]:
+        """Fails the first object's hook in the queued call's turn, then DELETE's own turn.
+
+        Returns the error DELETE raised and the errors the manager logged.
+        """
+        self.addCleanup(setattr, FailingDeactivateActor, 'error_for_new_objects', None)
+        type_info = ActorTypeInformation.create(FailingDeactivateActor)
+        ctx = ActorRuntimeContext(type_info, self._serializer, self._serializer, self._client)
+        manager = ActorManager(ctx)
+
+        async def append(item: str) -> None:
+            body = self._serializer.serialize(item)
+            await manager.dispatch(self._actor_id, 'Append', body)
+
+        async def scenario() -> BaseException:
+            await append('x')
+            actor_first: FailingDeactivateActor = manager._active_actors[self._actor_id.id].actor
+            actor_first.deactivate_error = error_first
+            FailingDeactivateActor.error_for_new_objects = error_second
+            actor_first.held = asyncio.Event()
+            actor_first.release = asyncio.Event()
+            held_task = asyncio.ensure_future(append('a'))
+            await asyncio.wait_for(actor_first.held.wait(), 5)
+            queued_task = asyncio.ensure_future(append('b'))
+            deactivation = asyncio.ensure_future(manager.deactivate_actor(self._actor_id))
+            await _let_pending_tasks_run()
+
+            actor_first.release.set()
+            with self.assertRaises(DaprInternalError):
+                await asyncio.wait_for(held_task, 5)
+            await asyncio.wait_for(queued_task, 5)
+            with self.assertRaises(RuntimeError) as raised:
+                await asyncio.wait_for(deactivation, 5)
+            return raised.exception
+
+        with self.assertLogs('dapr.actor.runtime.manager', level='ERROR') as logs:
+            error_raised = _run(scenario())
+
+        self.assertNotIn(self._actor_id.id, manager._active_actors)
+        self.assertEqual(['x', 'b'], self._stored_items())
+        errors_logged = [record.exc_info[1] if record.exc_info else None for record in logs.records]
+        return error_raised, errors_logged
+
+    def test_deactivation_error_reaches_its_caller_when_an_earlier_turn_deactivates(self):
+        error_first = RuntimeError('first object failed')
+
+        error_raised, errors_logged = self._deactivate_behind_a_queued_call(error_first, None)
+
+        self.assertIs(error_first, error_raised)
+        self.assertEqual([error_first], errors_logged)
+
+    def test_deactivation_raises_its_own_hook_error_after_an_earlier_one_was_logged(self):
+        error_first = RuntimeError('first object failed')
+        error_second = RuntimeError('second object failed')
+
+        error_raised, errors_logged = self._deactivate_behind_a_queued_call(
+            error_first, error_second
+        )
+
+        self.assertIs(error_second, error_raised)
+        self.assertEqual([error_first], errors_logged)
+
+    def test_activation_hit_by_deactivation_and_newer_id_is_deactivated_once(self):
+        async def scenario() -> None:
+            TurnTrackingActor.activation_release = asyncio.Event()
+            late_task = asyncio.ensure_future(self._append('a', 'act-1'))
+            await _let_pending_tasks_run()
+            deactivation = asyncio.ensure_future(self._manager.deactivate_actor(self._actor_id))
+            newer_task = asyncio.ensure_future(self._append('b', 'act-2'))
+            await _let_pending_tasks_run()
+
+            TurnTrackingActor.activation_release.set()
+            with self.assertRaises(DaprInternalError):
+                await asyncio.wait_for(late_task, 5)
+            await asyncio.wait_for(asyncio.gather(deactivation, newer_task), 5)
+
+        _run(scenario())
+
+        expected_log = ['activated', 'deactivated', 'activated', 'b started', 'b finished']
+        self.assertEqual(expected_log, self._log)
+        self.assertEqual(['b'], self._stored_items())
+        self.assertEqual({}, self._manager._detached)
+
+    def test_deactivation_during_activation_stops_the_call(self):
+        async def scenario() -> None:
+            TurnTrackingActor.activation_release = asyncio.Event()
+            first_task = asyncio.ensure_future(self._append('a'))
+            await _let_pending_tasks_run()
+            deactivation = asyncio.ensure_future(self._manager.deactivate_actor(self._actor_id))
+            await _let_pending_tasks_run()
+
+            TurnTrackingActor.activation_release.set()
+            with self.assertRaises(DaprInternalError):
+                await asyncio.wait_for(first_task, 5)
+            await asyncio.wait_for(deactivation, 5)
+
+        _run(scenario())
+
+        self.assertEqual(['activated', 'deactivated'], self._log)
+        self.assertNotIn(self._actor_id.id, self._manager._active_actors)
+        self.assertNotIn('items', self._client.store)
 
     def test_reentrant_call_with_another_activation_id_does_not_reset(self):
         async def scenario() -> TurnTrackingActor:
