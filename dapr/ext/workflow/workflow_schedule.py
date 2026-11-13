@@ -230,5 +230,6 @@ class WorkflowSchedulePage:
     def _from_proto(cls, res: pb.ListWorkflowSchedulesResponse) -> WorkflowSchedulePage:
         return cls(
             schedules=[WorkflowSchedule._from_proto(schedule) for schedule in res.schedules],
-            continuation_token=res.continuationToken if res.HasField('continuationToken') else None,
+            # An empty token, absent or not, means there is no next page.
+            continuation_token=res.continuationToken or None,
         )

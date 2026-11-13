@@ -184,6 +184,14 @@ class WorkflowScheduleConversionTest(unittest.TestCase):
         )
         self.assertEqual(WorkflowStatus.UNKNOWN, run.runtime_status)
 
+    def test_an_empty_continuation_token_means_the_last_page(self):
+        """Sending '' back would fetch the first page again."""
+        page = WorkflowSchedulePage._from_proto(
+            pb.ListWorkflowSchedulesResponse(continuationToken='')
+        )
+
+        self.assertIsNone(page.continuation_token)
+
     def test_every_state_the_proto_defines_is_mapped(self):
         mapped = {state.value for state in WorkflowScheduleState}
 

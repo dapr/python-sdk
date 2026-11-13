@@ -49,42 +49,60 @@ def wait_until_inactive(
     raise TimeoutError(f'schedule {name} still active after {timeout_seconds}s')
 
 
+def list_schedule_names(client: wf.DaprWorkflowClient) -> list[str]:
+    """Lists every schedule's name, following continuation tokens to the end.
+
+    A page can hold fewer schedules than the page size while more remain.
+    """
+    names: list[str] = []
+    token: str | None = None
+    while True:
+        page = client.list_workflow_schedules(continuation_token=token)
+        names += [schedule.name for schedule in page.schedules]
+        token = page.continuation_token
+        if token is None:
+            return names
+
+
 def main():
     client = wf.DaprWorkflowClient()
     wfr.start()
+    # The runtime's worker threads would keep the process alive if a call failed.
+    try:
+        client.create_workflow_schedule(
+            schedule_name, report_workflow, '@every 2s', input='eu', repeats=3, overwrite=True
+        )
+        print(f'*** created schedule {schedule_name}', flush=True)
 
-    client.create_workflow_schedule(
-        schedule_name, report_workflow, '@every 2s', input='eu', repeats=3, overwrite=True
-    )
-    print(f'*** created schedule {schedule_name}', flush=True)
+        run_id = client.trigger_workflow_schedule(schedule_name)
+        run_state = client.wait_for_workflow_completion(run_id, timeout_in_seconds=30)
+        print(
+            f'*** triggered run finished: status={run_state.runtime_status.name}'
+            f' result={run_state.serialized_output}',
+            flush=True,
+        )
 
-    run_id = client.trigger_workflow_schedule(schedule_name)
-    run_state = client.wait_for_workflow_completion(run_id, timeout_in_seconds=30)
-    print(
-        f'*** triggered run finished: status={run_state.runtime_status.name}'
-        f' result={run_state.serialized_output}',
-        flush=True,
-    )
+        schedule = wait_until_inactive(client, schedule_name)
+        print(
+            f'*** schedule finished: state={schedule.status.state.name}'
+            f' runs={schedule.status.run_count}',
+            flush=True,
+        )
 
-    schedule = wait_until_inactive(client, schedule_name)
-    print(
-        f'*** schedule finished: state={schedule.status.state.name}'
-        f' runs={schedule.status.run_count}',
-        flush=True,
-    )
+        present = schedule_name in list_schedule_names(client)
+        print(f'*** list: schedule present={present}', flush=True)
 
-    listed_names = [listed.name for listed in client.list_workflow_schedules().schedules]
-    print(f'*** list: schedule present={schedule_name in listed_names}', flush=True)
+        run_ids = list(client.iter_workflow_instance_ids(instance_id_prefix=f'{schedule_name}_'))
+        print(f'*** runs: {len(run_ids)}', flush=True)
 
-    run_ids = list(client.iter_workflow_instance_ids(instance_id_prefix=f'{schedule_name}_'))
-    print(f'*** runs: {len(run_ids)}', flush=True)
-
-    client.delete_workflow_schedule(schedule_name)
-    for instance_id in run_ids:
-        client.wait_for_workflow_completion(instance_id, timeout_in_seconds=30)
-        client.purge_workflow(instance_id)
-    print('*** deleted the schedule and purged its runs', flush=True)
-    wfr.shutdown()
+        client.delete_workflow_schedule(schedule_name)
+        for instance_id in run_ids:
+            client.wait_for_workflow_completion(instance_id, timeout_in_seconds=30)
+            client.purge_workflow(instance_id)
+        print('*** deleted the schedule and purged its runs', flush=True)
+    finally:
+        wfr.shutdown()
+        client.close()
 
 
 if __name__ == '__main__':
