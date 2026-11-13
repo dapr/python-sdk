@@ -16,6 +16,7 @@ dapr/ext/workflow/
 ├── workflow_state.py                  # WorkflowState, WorkflowStatus enum
 ├── workflow_management.py             # WorkflowHistoryEvent(Type), WorkflowInstanceIdPage
 ├── workflow_operation_result.py       # Results of the *_with_result client methods (staged)
+├── workflow_schedule.py               # WorkflowSchedule(+Status, Run, State, Page)
 ├── retry_policy.py                    # RetryPolicy wrapper
 ├── util.py                            # gRPC address resolution
 ├── logger/options.py                  # LoggerOptions
@@ -27,6 +28,7 @@ tests/ext/workflow/
 ├── test_workflow_activity_context.py  # Activity context properties
 ├── test_workflow_client.py            # Sync client (mock gRPC)
 ├── test_workflow_management.py        # list/history/rerun on both clients
+├── test_workflow_schedule.py          # schedule API on both clients (mocked gRPC stub)
 ├── test_workflow_client_aio.py        # Async client (IsolatedAsyncioTestCase)
 ├── test_workflow_staged.py            # *_with_result methods against a fake gRPC sidecar
 ├── test_workflow_runtime.py           # Registration, decorators, worker readiness
@@ -98,6 +100,8 @@ from dapr.ext.workflow import (
     WorkflowScheduleResult,  # instance_id + staged, from schedule_new_workflow_with_result
     WorkflowOperationResult,  # staged, from raise/terminate/pause/resume *_with_result
     WorkflowRerunResult,  # new_instance_id + staged, from rerun_workflow_from_event_with_result
+    WorkflowSchedule,  # A workflow schedule and its status (WorkflowScheduleStatus/Run/State)
+    WorkflowSchedulePage,  # One page of schedules plus the continuation token
 )
 
 # Async client:
@@ -155,8 +159,9 @@ Constructor: `DaprWorkflowClient(host, port, logger_options, max_grpc_message_le
 - `terminate_workflow(instance_id, *, output, recursive)`
 - `pause_workflow(instance_id)` / `resume_workflow(instance_id)`
 - `purge_workflow(instance_id, *, recursive)`
-- `list_workflow_instance_ids(*, page_size, continuation_token)` → `WorkflowInstanceIdPage`. No `app_id`: `ListInstanceIDsRequest` and `GetInstanceHistoryRequest` carry no `router`, and the runtime scopes both to the calling app. Only rerun can be routed cross-app.
-- `iter_workflow_instance_ids(*, page_size=1024)` → iterator over instance IDs, paging internally (`async for` on the async client)
+- `list_workflow_instance_ids(*, page_size, continuation_token, instance_id_prefix)` → `WorkflowInstanceIdPage`. No `app_id`: `ListInstanceIDsRequest` and `GetInstanceHistoryRequest` carry no `router`, and the runtime scopes both to the calling app. Only rerun can be routed cross-app.
+- `iter_workflow_instance_ids(*, page_size=1024, instance_id_prefix=None)` → iterator over instance IDs, paging internally (`async for` on the async client). A runtime that predates `instanceIdPrefix` ignores it and lists everything.
+- `create_workflow_schedule(name, workflow, schedule, *, input, due_time, expiration_time, repeats, app_id, app_namespace, overwrite, skip_missed)` / `get_workflow_schedule(name)` → `WorkflowSchedule` / `list_workflow_schedules(*, page_size, continuation_token)` → `WorkflowSchedulePage` / `delete_workflow_schedule(name)` / `trigger_workflow_schedule(name)` → run `instance_id`. Cron schedules served by `TaskHubSidecarService`; each run is a detached instance `<name>_<owner>_<fire time>`, so `instance_id_prefix=f'{name}_'` lists them. gRPC errors propagate unchanged.
 - `get_workflow_history(instance_id)` → `list[WorkflowHistoryEvent]`
 - `rerun_workflow_from_event(instance_id, event_id, *, new_instance_id, input, new_child_workflow_instance_id, app_id)` → new `instance_id`. Omitting `input` keeps the original; passing `None` clears it. That pair is an `input` + `overwriteInput` pair on the wire, which the engine layer takes as-is; the public method collapses it into one argument via the exported `UNSET` sentinel.
 - `close()` — close gRPC connection
@@ -237,6 +242,7 @@ Two example directories exercise workflows:
   - `versioning.py` — workflow versioning with `is_patched()`
   - `simple_aio_client.py` — async client variant
   - `async_activities.py` — `async def` activities (fan-out/fan-in with simulated I/O, configurable payload sizes)
+  - `workflow_schedule.py` - cron schedule: create, trigger, get, list runs by instance ID prefix, delete
 
 ## Testing
 

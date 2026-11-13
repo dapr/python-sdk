@@ -661,6 +661,64 @@ again. That does not generalise to every activity — one still in flight at the
 target event is re-dispatched, so a rerun can execute it a second time. The
 runtime reports `event_id` as `-1` for events it assigns no ID to.
 
+### Workflow Schedules
+
+This example starts a workflow on a schedule with the schedule APIs on
+`DaprWorkflowClient`:
+
+- `create_workflow_schedule()` creates a schedule that starts `report_workflow`
+  every 2 seconds with the same input, for 3 runs in all. Each run is a new
+  workflow instance with the ID `<schedule name>_<owner>_<fire time>`, where
+  `<owner>` is a 6-character tag of the app that owns the schedule.
+- `trigger_workflow_schedule()` starts a run now, without moving the next
+  scheduled run, and returns the run's instance ID. Triggered runs count
+  towards `repeats`.
+- `get_workflow_schedule()` and `list_workflow_schedules()` return
+  `WorkflowSchedule` records whose `status` carries the state, the run count,
+  the next run time and how the last run went.
+- `iter_workflow_instance_ids(instance_id_prefix=...)` lists the runs.
+- `delete_workflow_schedule()` stops and removes the schedule. Runs it already
+  started are left alone.
+
+The schedule string uses the syntax of the Dapr Jobs API: a 6-field cron
+expression with seconds (`0 30 9 * * MON`), `@every <duration>`, or one of
+`@yearly`, `@monthly`, `@weekly`, `@daily` and `@hourly`, with an optional
+`CRON_TZ=<zone> ` prefix. Times a schedule misses while the app is down are
+caught up by default: each starts its own run, one after another, as with Dapr
+jobs and actor reminders. Pass `skip_missed=True` to start one run for them all
+and carry on from the next time after now.
+
+Workflow schedules need a Dapr runtime that supports them; an older sidecar
+answers `UNIMPLEMENTED`. The async client exposes the same methods.
+
+<!--STEP
+name: Run the workflow schedule example
+expected_stdout_lines:
+  - "*** created schedule report-every-2s"
+  - '*** triggered run finished: status=COMPLETED result="report for eu"'
+  - "*** schedule finished: state=COMPLETED runs=3"
+  - "*** list: schedule present=True"
+  - "*** runs: 3"
+  - "*** deleted the schedule and purged its runs"
+timeout_seconds: 90
+-->
+
+```sh
+dapr run --app-id workflow-schedule -- python3 workflow_schedule.py
+```
+<!--END_STEP-->
+
+The output should look like this:
+
+```
+*** created schedule report-every-2s
+*** triggered run finished: status=COMPLETED result="report for eu"
+*** schedule finished: state=COMPLETED runs=3
+*** list: schedule present=True
+*** runs: 3
+*** deleted the schedule and purged its runs
+```
+
 ### Async Activities
 
 This example fans out several `async def` activities, then aggregates their

@@ -45,6 +45,10 @@ from dapr.ext.workflow.workflow_operation_result import (
     WorkflowRerunResult,
     WorkflowScheduleResult,
 )
+from dapr.ext.workflow.workflow_schedule import (
+    WorkflowSchedule,
+    WorkflowSchedulePage,
+)
 from dapr.ext.workflow.workflow_state import WorkflowState
 
 T = TypeVar('T')
@@ -208,6 +212,148 @@ class DaprWorkflowClient:
             app_id=app_id,
         )
         return WorkflowScheduleResult(instance_id=res.instanceId, staged=res.staged)
+
+    async def create_workflow_schedule(
+        self,
+        name: str,
+        workflow: Union[Workflow, str],
+        schedule: str,
+        *,
+        input: Optional[Any] = None,
+        due_time: Optional[datetime] = None,
+        expiration_time: Optional[datetime] = None,
+        repeats: Optional[int] = None,
+        app_id: Optional[str] = None,
+        app_namespace: Optional[str] = None,
+        overwrite: bool = False,
+        skip_missed: bool = False,
+    ) -> None:
+        """Creates a schedule that starts a workflow repeatedly.
+
+        Each run is a new, detached workflow instance with the ID
+        ``"<name>_<owner>_<fire time>"``, where the owner is a 6-character tag
+        of the app that owns the schedule and the fire time is formatted as
+        ``20060102T150405Z`` (UTC). So the runs of a schedule are the instances
+        whose ID starts with ``"<name>_<owner>_"``: list them with
+        ``iter_workflow_instance_ids`` and its ``instance_id_prefix``.
+
+        Args:
+            name: The schedule's name, unique within the app: 1 to 30 letters,
+            digits or '-'.
+            workflow: The workflow each run starts. Can be a workflow callable or a
+            workflow name string.
+            schedule: When runs start, in the syntax of the Dapr Jobs API: a
+            6-field cron expression with seconds (``"0 30 9 * * MON"``),
+            ``"@every <duration>"`` of at least 1s (``"@every 1h30m"``), or one of
+            ``"@yearly"``, ``"@monthly"``, ``"@weekly"``, ``"@daily"`` and
+            ``"@hourly"``. A ``"CRON_TZ=<zone> "`` prefix sets the time zone of a
+            cron expression, which is UTC otherwise.
+            input: The optional input every run is given. This must be a
+            serializable value.
+            due_time: The time of the first run. Defaults to the first time the
+            schedule matches after it is created.
+            expiration_time: The time after which no run starts. It must be in the
+            future.
+            repeats: The number of runs after which the schedule completes, at
+            least 1. Triggered runs count towards it.
+            app_id: The optional ID of another app that hosts the workflow each run
+            starts. Defaults to this app.
+            app_namespace: The namespace of app_id. Requires app_id.
+            overwrite: Replace an existing schedule of the same name. Runs it
+            already started are not affected.
+            skip_missed: How to handle the times the schedule missed while the
+            app was down. By default every missed time starts its own run, one
+            after another, as with Dapr jobs and actor reminders. When true, one
+            run starts for all of them and the schedule carries on from the next
+            time after now.
+
+        Raises:
+            grpc.aio.AioRpcError: With code INVALID_ARGUMENT if the runtime rejects an
+            argument, ALREADY_EXISTS if the name is taken and overwrite is false,
+            FAILED_PRECONDITION if no workflow worker is connected for the app,
+            and UNIMPLEMENTED if the runtime has no workflow schedule support.
+        """
+        await self.__obj.create_workflow_schedule(
+            name,
+            _workflow_name(workflow),
+            schedule,
+            input=input,
+            due_time=due_time,
+            expiration_time=expiration_time,
+            repeats=repeats,
+            app_id=app_id,
+            app_namespace=app_namespace,
+            overwrite=overwrite,
+            skip_missed=skip_missed,
+        )
+
+    async def get_workflow_schedule(self, name: str) -> WorkflowSchedule:
+        """Fetches a workflow schedule with its status, including how its last run stands.
+
+        Args:
+            name: The schedule's name.
+
+        Returns:
+            The schedule.
+
+        Raises:
+            grpc.aio.AioRpcError: With code NOT_FOUND if no such schedule exists.
+        """
+        schedule = await self.__obj.get_workflow_schedule(name)
+        return WorkflowSchedule._from_proto(schedule)
+
+    async def list_workflow_schedules(
+        self, *, page_size: Optional[int] = None, continuation_token: Optional[str] = None
+    ) -> WorkflowSchedulePage:
+        """Fetches one page of this app's workflow schedules, with their status.
+
+        Args:
+            page_size: The maximum number of schedules to return, between 1 and
+            4294967295. Defaults to leaving the limit to the runtime.
+            continuation_token: The token from a previous page, to start this page
+            where that one ended. Defaults to starting from the first page.
+
+        Returns:
+            A page of schedules, and the token for the next page if there is one.
+            A page can hold fewer schedules than page_size, or none, while more
+            remain, so keep paging while the token is set.
+
+        Raises:
+            ValueError: If page_size is given and is not between 1 and 4294967295.
+        """
+        res = await self.__obj.list_workflow_schedules(
+            page_size=page_size, continuation_token=continuation_token
+        )
+        return WorkflowSchedulePage._from_proto(res)
+
+    async def delete_workflow_schedule(self, name: str) -> None:
+        """Stops and removes a workflow schedule. Runs it already started are not affected.
+
+        Args:
+            name: The schedule's name.
+
+        Raises:
+            grpc.aio.AioRpcError: With code NOT_FOUND if no such schedule exists.
+        """
+        await self.__obj.delete_workflow_schedule(name)
+
+    async def trigger_workflow_schedule(self, name: str) -> str:
+        """Starts a run of a workflow schedule now, without moving its next scheduled run.
+
+        Args:
+            name: The schedule's name.
+
+        Returns:
+            The run's instance ID, ``"<name>_<owner>_<time>_manual"``, with the
+            time in milliseconds. Triggers within the same millisecond get the
+            same ID, so they start one run.
+
+        Raises:
+            grpc.aio.AioRpcError: With code NOT_FOUND if no such schedule exists, and
+            FAILED_PRECONDITION if the schedule has no runs left or no workflow
+            worker is connected for the app.
+        """
+        return await self.__obj.trigger_workflow_schedule(name)
 
     async def get_workflow_state(
         self,
@@ -584,7 +730,11 @@ class DaprWorkflowClient:
         return await self.__obj.purge_orchestration(instance_id, recursive, app_id=app_id)
 
     async def list_workflow_instance_ids(
-        self, *, page_size: Optional[int] = None, continuation_token: Optional[str] = None
+        self,
+        *,
+        page_size: Optional[int] = None,
+        continuation_token: Optional[str] = None,
+        instance_id_prefix: Optional[str] = None,
     ) -> WorkflowInstanceIdPage:
         """Fetches one page of workflow instance IDs for this app.
 
@@ -602,6 +752,11 @@ class DaprWorkflowClient:
             may answer with an endless page or fail on it.
             continuation_token: The token from a previous page, to start this
             page where that one ended. Defaults to starting from the first page.
+            instance_id_prefix: Only list the instances whose ID starts with
+            this, such as ``f'{schedule_name}_'`` for the runs of a workflow
+            schedule. A page can then hold fewer IDs than page_size, or none,
+            while more remain. A runtime that predates this filter ignores it
+            and lists every instance.
 
         Returns:
             A page of instance IDs, and the token for the next page if there is one.
@@ -613,7 +768,9 @@ class DaprWorkflowClient:
         """
         try:
             res = await self.__obj.list_instance_ids(
-                page_size=page_size, continuation_token=continuation_token
+                page_size=page_size,
+                continuation_token=continuation_token,
+                instance_id_prefix=instance_id_prefix,
             )
         except AioRpcError as error:
             if error.code() == StatusCode.UNIMPLEMENTED:
@@ -626,7 +783,9 @@ class DaprWorkflowClient:
             raise NotImplementedError(advice) from error
         return WorkflowInstanceIdPage._from_proto(res)
 
-    async def iter_workflow_instance_ids(self, *, page_size: int = 1024) -> AsyncIterator[str]:
+    async def iter_workflow_instance_ids(
+        self, *, page_size: int = 1024, instance_id_prefix: Optional[str] = None
+    ) -> AsyncIterator[str]:
         """Iterates over every workflow instance ID for this app, paging as it goes.
 
         Pages are fetched lazily, so abandoning the iterator early stops the
@@ -635,6 +794,8 @@ class DaprWorkflowClient:
 
         Args:
             page_size: The maximum number of instance IDs to fetch per request.
+            instance_id_prefix: Only iterate over the instances whose ID starts
+            with this, as for list_workflow_instance_ids.
 
         Yields:
             Instance IDs, in the order the runtime returns them.
@@ -642,7 +803,9 @@ class DaprWorkflowClient:
         continuation_token = None
         while True:
             page = await self.list_workflow_instance_ids(
-                page_size=page_size, continuation_token=continuation_token
+                page_size=page_size,
+                continuation_token=continuation_token,
+                instance_id_prefix=instance_id_prefix,
             )
             for instance_id in page.instance_ids:
                 yield instance_id

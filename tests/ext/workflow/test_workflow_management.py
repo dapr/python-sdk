@@ -75,7 +75,9 @@ class FakeTaskHubGrpcClient:
         self.list_calls = []
         self.rerun_calls = []
 
-    def list_instance_ids(self, *, page_size=None, continuation_token=None):
+    def list_instance_ids(
+        self, *, page_size=None, continuation_token=None, instance_id_prefix=None
+    ):
         self.list_calls.append((page_size, continuation_token))
         return self.pages[len(self.list_calls) - 1]
 
@@ -118,7 +120,9 @@ class FakeTaskHubGrpcClient:
 
 
 class AsyncFakeTaskHubGrpcClient(FakeTaskHubGrpcClient):
-    async def list_instance_ids(self, *, page_size=None, continuation_token=None):
+    async def list_instance_ids(
+        self, *, page_size=None, continuation_token=None, instance_id_prefix=None
+    ):
         return super().list_instance_ids(page_size=page_size, continuation_token=continuation_token)
 
     async def get_instance_history(self, instance_id: str):

@@ -38,7 +38,9 @@ from dapr.ext.workflow._durabletask.client import (
     TOutput,
     WorkflowIdReusePolicy,
     WorkflowState,
+    _new_create_schedule_request,
     _new_list_request,
+    _new_list_schedules_request,
     _new_rerun_request,
     _TransientTimeout,
     new_orchestration_state,
@@ -157,6 +159,60 @@ class AsyncTaskHubGrpcClient:
 
         self._logger.info(f"Starting new '{name}' instance with ID = '{req.instanceId}'.")
         return await self._get_stub().StartInstance(req)
+
+    async def create_workflow_schedule(
+        self,
+        name: str,
+        workflow_name: str,
+        schedule: str,
+        *,
+        input: Optional[Any] = None,
+        due_time: Optional[datetime] = None,
+        expiration_time: Optional[datetime] = None,
+        repeats: Optional[int] = None,
+        app_id: Optional[str] = None,
+        app_namespace: Optional[str] = None,
+        overwrite: bool = False,
+        skip_missed: bool = False,
+    ) -> None:
+        req = _new_create_schedule_request(
+            name,
+            workflow_name,
+            schedule,
+            input=input,
+            due_time=due_time,
+            expiration_time=expiration_time,
+            repeats=repeats,
+            app_id=app_id,
+            app_namespace=app_namespace,
+            overwrite=overwrite,
+            skip_missed=skip_missed,
+        )
+        self._logger.info(f"Creating schedule '{name}' for workflow '{workflow_name}'.")
+        await self._get_stub().CreateWorkflowSchedule(req)
+
+    async def get_workflow_schedule(self, name: str) -> pb.WorkflowSchedule:
+        req = pb.GetWorkflowScheduleRequest(name=name)
+        res: pb.GetWorkflowScheduleResponse = await self._get_stub().GetWorkflowSchedule(req)
+        return res.schedule
+
+    async def list_workflow_schedules(
+        self, *, page_size: Optional[int] = None, continuation_token: Optional[str] = None
+    ) -> pb.ListWorkflowSchedulesResponse:
+        req = _new_list_schedules_request(page_size, continuation_token)
+        return await self._get_stub().ListWorkflowSchedules(req)
+
+    async def delete_workflow_schedule(self, name: str) -> None:
+        self._logger.info(f"Deleting schedule '{name}'.")
+        await self._get_stub().DeleteWorkflowSchedule(pb.DeleteWorkflowScheduleRequest(name=name))
+
+    async def trigger_workflow_schedule(self, name: str) -> str:
+        self._logger.info(f"Triggering schedule '{name}'.")
+        req = pb.TriggerWorkflowScheduleRequest(name=name)
+        res: pb.TriggerWorkflowScheduleResponse = await self._get_stub().TriggerWorkflowSchedule(
+            req
+        )
+        return res.instanceId
 
     async def get_orchestration_state(
         self,
@@ -444,9 +500,13 @@ class AsyncTaskHubGrpcClient:
         await self._get_stub().PurgeInstances(req)
 
     async def list_instance_ids(
-        self, *, page_size: Optional[int] = None, continuation_token: Optional[str] = None
+        self,
+        *,
+        page_size: Optional[int] = None,
+        continuation_token: Optional[str] = None,
+        instance_id_prefix: Optional[str] = None,
     ) -> pb.ListInstanceIDsResponse:
-        req = _new_list_request(page_size, continuation_token)
+        req = _new_list_request(page_size, continuation_token, instance_id_prefix)
         return await self._get_stub().ListInstanceIDs(req)
 
     async def get_instance_history(self, instance_id: str) -> list[pb.HistoryEvent]:
