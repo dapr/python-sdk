@@ -395,6 +395,7 @@ class WorkflowState(_message.Message):
     TAGS_FIELD_NUMBER: _builtins.int
     PARENTAPPID_FIELD_NUMBER: _builtins.int
     STARTEDAT_FIELD_NUMBER: _builtins.int
+    TERMINATIONREASON_FIELD_NUMBER: _builtins.int
     instanceId: _builtins.str
     name: _builtins.str
     workflowStatus: Global___OrchestrationStatus.ValueType
@@ -426,6 +427,8 @@ class WorkflowState(_message.Message):
     def parentAppId(self) -> _wrappers_pb2.StringValue: ...
     @_builtins.property
     def startedAt(self) -> _timestamp_pb2.Timestamp: ...
+    @_builtins.property
+    def terminationReason(self) -> _wrappers_pb2.StringValue: ...
     def __init__(
         self,
         *,
@@ -446,10 +449,11 @@ class WorkflowState(_message.Message):
         tags: _abc.Mapping[_builtins.str, _builtins.str] | None = ...,
         parentAppId: _wrappers_pb2.StringValue | None = ...,
         startedAt: _timestamp_pb2.Timestamp | None = ...,
+        terminationReason: _wrappers_pb2.StringValue | None = ...,
     ) -> None: ...
-    _HasFieldArgType: _TypeAlias = _typing.Literal["_startedAt", b"_startedAt", "completedTimestamp", b"completedTimestamp", "createdTimestamp", b"createdTimestamp", "customStatus", b"customStatus", "executionId", b"executionId", "failureDetails", b"failureDetails", "input", b"input", "lastUpdatedTimestamp", b"lastUpdatedTimestamp", "output", b"output", "parentAppId", b"parentAppId", "parentInstanceId", b"parentInstanceId", "scheduledStartTimestamp", b"scheduledStartTimestamp", "startedAt", b"startedAt", "version", b"version"]  # noqa: Y015
+    _HasFieldArgType: _TypeAlias = _typing.Literal["_startedAt", b"_startedAt", "completedTimestamp", b"completedTimestamp", "createdTimestamp", b"createdTimestamp", "customStatus", b"customStatus", "executionId", b"executionId", "failureDetails", b"failureDetails", "input", b"input", "lastUpdatedTimestamp", b"lastUpdatedTimestamp", "output", b"output", "parentAppId", b"parentAppId", "parentInstanceId", b"parentInstanceId", "scheduledStartTimestamp", b"scheduledStartTimestamp", "startedAt", b"startedAt", "terminationReason", b"terminationReason", "version", b"version"]  # noqa: Y015
     def HasField(self, field_name: _HasFieldArgType) -> _builtins.bool: ...
-    _ClearFieldArgType: _TypeAlias = _typing.Literal["_startedAt", b"_startedAt", "completedTimestamp", b"completedTimestamp", "createdTimestamp", b"createdTimestamp", "customStatus", b"customStatus", "executionId", b"executionId", "failureDetails", b"failureDetails", "input", b"input", "instanceId", b"instanceId", "lastUpdatedTimestamp", b"lastUpdatedTimestamp", "name", b"name", "output", b"output", "parentAppId", b"parentAppId", "parentInstanceId", b"parentInstanceId", "scheduledStartTimestamp", b"scheduledStartTimestamp", "startedAt", b"startedAt", "tags", b"tags", "version", b"version", "workflowStatus", b"workflowStatus"]  # noqa: Y015
+    _ClearFieldArgType: _TypeAlias = _typing.Literal["_startedAt", b"_startedAt", "completedTimestamp", b"completedTimestamp", "createdTimestamp", b"createdTimestamp", "customStatus", b"customStatus", "executionId", b"executionId", "failureDetails", b"failureDetails", "input", b"input", "instanceId", b"instanceId", "lastUpdatedTimestamp", b"lastUpdatedTimestamp", "name", b"name", "output", b"output", "parentAppId", b"parentAppId", "parentInstanceId", b"parentInstanceId", "scheduledStartTimestamp", b"scheduledStartTimestamp", "startedAt", b"startedAt", "tags", b"tags", "terminationReason", b"terminationReason", "version", b"version", "workflowStatus", b"workflowStatus"]  # noqa: Y015
     def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
     _WhichOneofReturnType__startedAt: _TypeAlias = _typing.Literal["startedAt"]  # noqa: Y015
     _WhichOneofArgType__startedAt: _TypeAlias = _typing.Literal["_startedAt", b"_startedAt"]  # noqa: Y015
