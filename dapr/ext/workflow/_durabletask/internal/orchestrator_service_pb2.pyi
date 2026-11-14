@@ -203,7 +203,6 @@ class WorkflowRequest(_message.Message):
     NEWEVENTS_FIELD_NUMBER: _builtins.int
     REQUIRESHISTORYSTREAMING_FIELD_NUMBER: _builtins.int
     ROUTER_FIELD_NUMBER: _builtins.int
-    REASON_FIELD_NUMBER: _builtins.int
     PROPAGATEDHISTORY_FIELD_NUMBER: _builtins.int
     CACHEDHISTORY_FIELD_NUMBER: _builtins.int
     instanceId: _builtins.str
@@ -240,13 +239,12 @@ class WorkflowRequest(_message.Message):
         newEvents: _abc.Iterable[_history_events_pb2.HistoryEvent] | None = ...,
         requiresHistoryStreaming: _builtins.bool = ...,
         router: _orchestration_pb2.TaskRouter | None = ...,
-        reason: _wrappers_pb2.StringValue | None = ...,
         propagatedHistory: _history_events_pb2.PropagatedHistory | None = ...,
         cachedHistory: Global___CachedHistory | None = ...,
     ) -> None: ...
-    _HasFieldArgType: _TypeAlias = _typing.Literal["_cachedHistory", b"_cachedHistory", "_propagatedHistory", b"_propagatedHistory", "_router", b"_router", "cachedHistory", b"cachedHistory", "executionId", b"executionId", "propagatedHistory", b"propagatedHistory", "router", b"router", "reason", b"reason"]  # noqa: Y015
+    _HasFieldArgType: _TypeAlias = _typing.Literal["_cachedHistory", b"_cachedHistory", "_propagatedHistory", b"_propagatedHistory", "_router", b"_router", "cachedHistory", b"cachedHistory", "executionId", b"executionId", "propagatedHistory", b"propagatedHistory", "router", b"router"]  # noqa: Y015
     def HasField(self, field_name: _HasFieldArgType) -> _builtins.bool: ...
-    _ClearFieldArgType: _TypeAlias = _typing.Literal["_cachedHistory", b"_cachedHistory", "_propagatedHistory", b"_propagatedHistory", "_router", b"_router", "cachedHistory", b"cachedHistory", "executionId", b"executionId", "instanceId", b"instanceId", "newEvents", b"newEvents", "pastEvents", b"pastEvents", "propagatedHistory", b"propagatedHistory", "requiresHistoryStreaming", b"requiresHistoryStreaming", "router", b"router", "reason", b"reason"]  # noqa: Y015
+    _ClearFieldArgType: _TypeAlias = _typing.Literal["_cachedHistory", b"_cachedHistory", "_propagatedHistory", b"_propagatedHistory", "_router", b"_router", "cachedHistory", b"cachedHistory", "executionId", b"executionId", "instanceId", b"instanceId", "newEvents", b"newEvents", "pastEvents", b"pastEvents", "propagatedHistory", b"propagatedHistory", "requiresHistoryStreaming", b"requiresHistoryStreaming", "router", b"router"]  # noqa: Y015
     def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
     _WhichOneofReturnType__cachedHistory: _TypeAlias = _typing.Literal["cachedHistory"]  # noqa: Y015
     _WhichOneofArgType__cachedHistory: _TypeAlias = _typing.Literal["_cachedHistory", b"_cachedHistory"]  # noqa: Y015
@@ -533,6 +531,7 @@ class TerminateRequest(_message.Message):
     OUTPUT_FIELD_NUMBER: _builtins.int
     RECURSIVE_FIELD_NUMBER: _builtins.int
     ROUTER_FIELD_NUMBER: _builtins.int
+    REASON_FIELD_NUMBER: _builtins.int
     instanceId: _builtins.str
     recursive: _builtins.bool
     @_builtins.property
@@ -552,10 +551,11 @@ class TerminateRequest(_message.Message):
         output: _wrappers_pb2.StringValue | None = ...,
         recursive: _builtins.bool = ...,
         router: _orchestration_pb2.TaskRouter | None = ...,
+        reason: _wrappers_pb2.StringValue | None = ...,
     ) -> None: ...
-    _HasFieldArgType: _TypeAlias = _typing.Literal["_router", b"_router", "output", b"output", "router", b"router"]  # noqa: Y015
+    _HasFieldArgType: _TypeAlias = _typing.Literal["_router", b"_router", "output", b"output", "router", b"router", "reason", b"reason"]  # noqa: Y015
     def HasField(self, field_name: _HasFieldArgType) -> _builtins.bool: ...
-    _ClearFieldArgType: _TypeAlias = _typing.Literal["_router", b"_router", "instanceId", b"instanceId", "output", b"output", "recursive", b"recursive", "router", b"router"]  # noqa: Y015
+    _ClearFieldArgType: _TypeAlias = _typing.Literal["_router", b"_router", "instanceId", b"instanceId", "output", b"output", "recursive", b"recursive", "router", b"router", "reason", b"reason"]  # noqa: Y015
     def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
     _WhichOneofReturnType__router: _TypeAlias = _typing.Literal["router"]  # noqa: Y015
     _WhichOneofArgType__router: _TypeAlias = _typing.Literal["_router", b"_router"]  # noqa: Y015
