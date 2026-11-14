@@ -1512,6 +1512,12 @@ class TaskHubGrpcWorker:
                 )
 
 
+class _BufferedExternalEventFailure:
+    def __init__(self, event_name: str, failure_details: pb.TaskFailureDetails):
+        self.event_name = event_name
+        self.failure_details = failure_details
+
+
 class _RuntimeOrchestrationContext(
     task.OrchestrationContext, deterministic.DeterministicContextMixin
 ):
@@ -1656,10 +1662,18 @@ class _RuntimeOrchestrationContext(
                 # replayed when the new instance starts.
                 for event_name, values in self._received_events.items():
                     for event_value in values:
-                        encoded_value = shared.to_json(event_value) if event_value else None
-                        carryover_events.append(
-                            ph.new_event_raised_event(event_name, encoded_value)
-                        )
+                        if isinstance(event_value, _BufferedExternalEventFailure):
+                            carryover_events.append(
+                                ph.new_event_raised_event(
+                                    event_name,
+                                    failure_details=event_value.failure_details,
+                                )
+                            )
+                        else:
+                            encoded_value = shared.to_json(event_value) if event_value else None
+                            carryover_events.append(
+                                ph.new_event_raised_event(event_name, encoded_value)
+                            )
             action = ph.new_complete_workflow_action(
                 self.next_sequence_number(),
                 pb.ORCHESTRATION_STATUS_CONTINUED_AS_NEW,
@@ -1923,7 +1937,14 @@ class _RuntimeOrchestrationContext(
             event_data = event_list.pop(0)
             if not event_list:
                 del self._received_events[event_name]
-            external_event_task.complete(event_data)
+            if isinstance(event_data, _BufferedExternalEventFailure):
+                details = event_data.failure_details
+                external_event_task.fail(
+                    f"External event '{event_data.event_name}' failed: {details.errorMessage}",
+                    details,
+                )
+            else:
+                external_event_task.complete(event_data)
         else:
             task_list = self._pending_events.get(event_name, None)
             if not task_list:
@@ -2411,24 +2432,36 @@ class _OrchestrationExecutor:
                 if not ctx.is_replaying:
                     self._logger.info(f'{ctx.instance_id} Event raised: {event_name}')
                 task_list = ctx._pending_events.get(event_name, None)
+                failure_details = event.eventRaised.failureDetails
                 decoded_result: Optional[Any] = None
                 if task_list:
                     event_task = task_list.pop(0)
-                    if not ph.is_empty(event.eventRaised.input):
-                        decoded_result = shared.from_json(event.eventRaised.input.value)
-                    event_task.complete(decoded_result)
+                    if failure_details:
+                        event_task.fail(
+                            f"External event '{event.eventRaised.name}' failed: {failure_details.errorMessage}",
+                            failure_details,
+                        )
+                    else:
+                        if not ph.is_empty(event.eventRaised.input):
+                            decoded_result = shared.from_json(event.eventRaised.input.value)
+                        event_task.complete(decoded_result)
                     if not task_list:
                         del ctx._pending_events[event_name]
                     ctx.resume()
                 else:
-                    # buffer the event
+                    # Buffer the event without mixing failure metadata into user payloads.
                     event_list = ctx._received_events.get(event_name, None)
                     if not event_list:
                         event_list = []
                         ctx._received_events[event_name] = event_list
-                    if not ph.is_empty(event.eventRaised.input):
-                        decoded_result = shared.from_json(event.eventRaised.input.value)
-                    event_list.append(decoded_result)
+                    if failure_details:
+                        event_list.append(
+                            _BufferedExternalEventFailure(event.eventRaised.name, failure_details)
+                        )
+                    else:
+                        if not ph.is_empty(event.eventRaised.input):
+                            decoded_result = shared.from_json(event.eventRaised.input.value)
+                        event_list.append(decoded_result)
                     if not ctx.is_replaying:
                         self._logger.info(
                             f"{ctx.instance_id}: Event '{event_name}' has been buffered as there are no tasks waiting for it."

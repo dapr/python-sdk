@@ -290,6 +290,7 @@ class TaskFailedError(Exception):
 
     def __init__(self, message: str, details: pb.TaskFailureDetails):
         super().__init__(message)
+        self._failure_details = details
         self._details = FailureDetails(
             details.errorMessage,
             details.errorType,
@@ -299,6 +300,11 @@ class TaskFailedError(Exception):
     @property
     def details(self) -> FailureDetails:
         return self._details
+
+    @property
+    def failure_details(self) -> pb.TaskFailureDetails:
+        """Gets the structured protobuf failure, including nested causes."""
+        return self._failure_details
 
 
 class NonDeterminismError(Exception):
