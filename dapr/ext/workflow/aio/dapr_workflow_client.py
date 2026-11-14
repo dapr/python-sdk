@@ -412,6 +412,7 @@ class DaprWorkflowClient:
         output: Optional[Any] = None,
         recursive: bool = True,
         app_id: Optional[str] = None,
+        reason: Optional[str] = None,
     ) -> None:
         """Terminates a running workflow instance and updates its runtime status to
            WorkflowRuntimeStatus.Terminated This method internally enqueues a "terminate" message in
@@ -443,6 +444,7 @@ class DaprWorkflowClient:
             output=output,
             recursive=recursive,
             app_id=app_id,
+            reason=reason,
         )
 
     async def terminate_workflow_with_result(
@@ -452,6 +454,7 @@ class DaprWorkflowClient:
         output: Optional[Any] = None,
         recursive: bool = True,
         app_id: Optional[str] = None,
+        reason: Optional[str] = None,
     ) -> WorkflowOperationResult:
         """Terminates a workflow instance, and reports whether the sidecar staged it.
 
@@ -467,12 +470,13 @@ class DaprWorkflowClient:
             recursive: The optional flag to terminate all child workflows.
             app_id: The optional ID of the app hosting the workflow instance, when it is
             hosted by a different app. See terminate_workflow.
+            reason: Optional description retained with the terminated workflow's history.
 
         Returns:
             Whether the sidecar staged the operation.
         """
         res = await self.__obj.terminate_orchestration_with_result(
-            instance_id, output=output, recursive=recursive, app_id=app_id
+            instance_id, output=output, recursive=recursive, app_id=app_id, reason=reason
         )
         return WorkflowOperationResult(staged=res.staged)
 
