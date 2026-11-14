@@ -441,6 +441,7 @@ class DaprWorkflowClient:
             instance_id: The ID of the workflow instance to terminate.
             output: The optional output to set for the terminated workflow instance.
             recursive: The optional flag to terminate all child workflows.
+            reason: Optional reason retained with the terminated workflow's history.
             app_id: The optional ID of the app hosting the workflow instance, when it is
             hosted by a different app. The target app's WorkflowAccessPolicy governs whether
             this operation is permitted.
