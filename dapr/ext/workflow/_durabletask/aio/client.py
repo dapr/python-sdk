@@ -378,7 +378,7 @@ class AsyncTaskHubGrpcClient:
         """Like terminate_orchestration, but returns the sidecar's response."""
         req = pb.TerminateRequest(
             instanceId=instance_id,
-            output=wrappers_pb2.StringValue(value=shared.to_json(output)) if output else None,
+            output=wrappers_pb2.StringValue(value=shared.to_json(output)) if output is not None else None,
             recursive=recursive,
             router=new_task_router(app_id),
             reason=wrappers_pb2.StringValue(value=reason) if reason is not None else None,
