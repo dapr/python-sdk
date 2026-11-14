@@ -60,6 +60,8 @@ class ExecutionStartedEvent(_message.Message):
     @_builtins.property
     def input(self) -> _wrappers_pb2.StringValue: ...
     @_builtins.property
+    def reason(self) -> _wrappers_pb2.StringValue: ...
+    @_builtins.property
     def workflowInstance(self) -> _orchestration_pb2.WorkflowInstance: ...
     @_builtins.property
     def parentInstance(self) -> _orchestration_pb2.ParentInstanceInfo: ...
@@ -123,6 +125,7 @@ class ExecutionTerminatedEvent(_message.Message):
 
     INPUT_FIELD_NUMBER: _builtins.int
     RECURSE_FIELD_NUMBER: _builtins.int
+    REASON_FIELD_NUMBER: _builtins.int
     recurse: _builtins.bool
     @_builtins.property
     def input(self) -> _wrappers_pb2.StringValue: ...
@@ -131,10 +134,11 @@ class ExecutionTerminatedEvent(_message.Message):
         *,
         input: _wrappers_pb2.StringValue | None = ...,
         recurse: _builtins.bool = ...,
+        reason: _wrappers_pb2.StringValue | None = ...,
     ) -> None: ...
-    _HasFieldArgType: _TypeAlias = _typing.Literal["input", b"input"]  # noqa: Y015
+    _HasFieldArgType: _TypeAlias = _typing.Literal["input", b"input", "reason", b"reason"]  # noqa: Y015
     def HasField(self, field_name: _HasFieldArgType) -> _builtins.bool: ...
-    _ClearFieldArgType: _TypeAlias = _typing.Literal["input", b"input", "recurse", b"recurse"]  # noqa: Y015
+    _ClearFieldArgType: _TypeAlias = _typing.Literal["input", b"input", "reason", b"reason", "recurse", b"recurse"]  # noqa: Y015
     def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
 
 Global___ExecutionTerminatedEvent: _TypeAlias = ExecutionTerminatedEvent  # noqa: Y015
