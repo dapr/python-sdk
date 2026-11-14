@@ -436,11 +436,12 @@ class TaskHubGrpcClient:
 
     # Transient gRPC codes that indicate the workflow runtime is temporarily
     # unable to locate the workflow actor — typically immediately after a Dapr
-    # sidecar restart (e.g. recovery from chaos). The placement service has the
-    # actor registration, but local daprd hasn't received the dissemination yet.
-    # Without retry, every poll fails permanently with FAILED_PRECONDITION even
-    # though the workflow runtime state is intact.
+    # sidecar restart (e.g. recovery from chaos), or when daprd cancels in-flight
+    # wait calls on runtime restart/reload (dapr/dapr#10566, dapr/python-sdk#1246).
+    # Without retry, every poll fails permanently with FAILED_PRECONDITION/CANCELLED
+    # even though the workflow runtime state is intact.
     _TRANSIENT_RPC_CODES = (
+        grpc.StatusCode.CANCELLED,
         grpc.StatusCode.FAILED_PRECONDITION,
         grpc.StatusCode.UNAVAILABLE,
     )
@@ -488,6 +489,7 @@ class TaskHubGrpcClient:
         backoff = 0.5
         transient_deadline = None  # unbounded mode only; anchored on first transient
         while True:
+            call_start = time.perf_counter()
             try:
                 return call_fn(grpc_timeout)
             except grpc.RpcError as rpc_error:
@@ -500,11 +502,19 @@ class TaskHubGrpcClient:
                     raise
 
                 now = time.monotonic()
+                call_duration = time.perf_counter() - call_start
 
                 # In unbounded mode the user budget can't end the loop, so cap
                 # continuous transient retries and re-raise the original error
                 # (matching pre-retry behavior) once the grace window elapses.
+                # If a re-issued wait was healthy and in-flight (held by daprd)
+                # before being cancelled by a new restart, restart the grace
+                # window and reset backoff rather than anchoring on the first error.
                 if unbounded:
+                    if code == grpc.StatusCode.CANCELLED and call_duration >= 1.0:
+                        transient_deadline = None
+                        backoff = 0.5
+
                     if transient_deadline is None:
                         transient_deadline = now + self._MAX_TRANSIENT_RETRY_SECONDS
                     elif now >= transient_deadline:

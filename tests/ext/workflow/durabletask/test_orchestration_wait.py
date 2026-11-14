@@ -4,7 +4,7 @@ from unittest.mock import Mock
 import grpc
 import pytest
 
-from dapr.ext.workflow._durabletask.client import TaskHubGrpcClient
+from dapr.ext.workflow._durabletask.client import OrchestrationStatus, TaskHubGrpcClient
 
 
 @pytest.mark.parametrize('timeout', [None, 0, 5])
@@ -79,7 +79,12 @@ def _make_rpc_error(code: grpc.StatusCode) -> grpc.RpcError:
 
 
 @pytest.mark.parametrize(
-    'transient_code', [grpc.StatusCode.FAILED_PRECONDITION, grpc.StatusCode.UNAVAILABLE]
+    'transient_code',
+    [
+        grpc.StatusCode.CANCELLED,
+        grpc.StatusCode.FAILED_PRECONDITION,
+        grpc.StatusCode.UNAVAILABLE,
+    ],
 )
 def test_wait_for_orchestration_start_retries_transient_then_succeeds(transient_code, monkeypatch):
     """Transient gRPC error on the first call → backoff → next call succeeds."""
@@ -210,23 +215,170 @@ def test_cancelled_after_deadline_surfaces_as_timeout():
         c.wait_for_orchestration_completion('test-instance', timeout=0.01)
 
 
-def test_cancelled_within_deadline_still_propagates():
-    """A CANCELLED with budget remaining is a real cancellation, not a timeout."""
+def test_cancelled_within_deadline_retries_then_succeeds(monkeypatch):
+    """A server-sent CANCELLED with deadline budget remaining is retried."""
+    instance_id = 'test-instance'
+
+    from dapr.ext.workflow._durabletask.internal.protos import (
+        ORCHESTRATION_STATUS_COMPLETED,
+        GetInstanceResponse,
+        WorkflowState,
+    )
+
+    response = GetInstanceResponse()
+    response.exists = True
+    state = WorkflowState()
+    state.instanceId = instance_id
+    state.workflowStatus = ORCHESTRATION_STATUS_COMPLETED
+    response.workflowState.CopyFrom(state)
+
+    sleeps = []
+    monkeypatch.setattr(
+        'dapr.ext.workflow._durabletask.client.time.sleep', lambda s: sleeps.append(s)
+    )
+
+    calls = {'n': 0}
+
+    def fake_call(*args, **kwargs):
+        calls['n'] += 1
+        if calls['n'] == 1:
+            raise _make_rpc_error(grpc.StatusCode.CANCELLED)
+        return response
+
+    c = TaskHubGrpcClient()
+    c._stub = Mock()
+    c._stub.WaitForInstanceCompletion.side_effect = fake_call
+
+    res = c.wait_for_orchestration_completion(instance_id, timeout=300)
+    assert res is not None
+    assert res.runtime_status == OrchestrationStatus.COMPLETED
+    assert calls['n'] == 2
+    assert len(sleeps) == 1 and sleeps[0] > 0
+
+
+def test_cancelled_unbounded_wait_retries_then_succeeds(monkeypatch):
+    """With timeout=0 (unbounded), server-sent CANCELLED is retried with backoff."""
+    instance_id = 'test-instance'
+
+    from dapr.ext.workflow._durabletask.internal.protos import (
+        ORCHESTRATION_STATUS_COMPLETED,
+        GetInstanceResponse,
+        WorkflowState,
+    )
+
+    response = GetInstanceResponse()
+    response.exists = True
+    state = WorkflowState()
+    state.instanceId = instance_id
+    state.workflowStatus = ORCHESTRATION_STATUS_COMPLETED
+    response.workflowState.CopyFrom(state)
+
+    sleeps = []
+    monkeypatch.setattr(
+        'dapr.ext.workflow._durabletask.client.time.sleep', lambda s: sleeps.append(s)
+    )
+
+    calls = {'n': 0}
+
+    def fake_call(*args, **kwargs):
+        calls['n'] += 1
+        if calls['n'] == 1:
+            raise _make_rpc_error(grpc.StatusCode.CANCELLED)
+        return response
+
+    c = TaskHubGrpcClient()
+    c._stub = Mock()
+    c._stub.WaitForInstanceCompletion.side_effect = fake_call
+
+    res = c.wait_for_orchestration_completion(instance_id, timeout=0)
+    assert res is not None
+    assert res.runtime_status == OrchestrationStatus.COMPLETED
+    assert calls['n'] == 2
+    assert len(sleeps) == 1 and sleeps[0] > 0
+
+
+def test_cancelled_unbounded_wait_persistent_gives_up_with_rpc_error(monkeypatch):
+    """With timeout=0 (unbounded), persistent CANCELLED errors are retried only
+    for the grace window, then the original RpcError propagates — NOT a hang and
+    NOT a TimeoutError."""
+    instance_id = 'test-instance'
+
+    fake_time = [0.0]
+
+    def fake_monotonic():
+        fake_time[0] += 20.0
+        return fake_time[0]
+
+    monkeypatch.setattr('dapr.ext.workflow._durabletask.client.time.monotonic', fake_monotonic)
+    monkeypatch.setattr('dapr.ext.workflow._durabletask.client.time.sleep', lambda s: None)
+
     c = TaskHubGrpcClient()
     c._stub = Mock()
     c._stub.WaitForInstanceCompletion.side_effect = _make_rpc_error(grpc.StatusCode.CANCELLED)
 
     with pytest.raises(grpc.RpcError) as exc_info:
-        c.wait_for_orchestration_completion('test-instance', timeout=300)
+        c.wait_for_orchestration_completion(instance_id, timeout=0)
     assert not isinstance(exc_info.value, TimeoutError)
+    assert c._stub.WaitForInstanceCompletion.call_count >= 2
 
 
-def test_cancelled_unbounded_wait_still_propagates():
-    """With no caller deadline there is nothing to attribute a CANCELLED to."""
+def test_unbounded_wait_retries_across_multiple_sidecar_restarts(monkeypatch):
+    """An unbounded wait survives multiple sidecar restarts separated by long waits.
+
+    Restarting the 30s transient window on each healthy re-issue prevents
+    restarts separated by normal wait times from failing the orchestrator wait.
+    """
+    instance_id = 'test-instance'
+
+    from dapr.ext.workflow._durabletask.internal.protos import (
+        ORCHESTRATION_STATUS_COMPLETED,
+        GetInstanceResponse,
+        WorkflowState,
+    )
+
+    response = GetInstanceResponse()
+    response.exists = True
+    state = WorkflowState()
+    state.instanceId = instance_id
+    state.workflowStatus = ORCHESTRATION_STATUS_COMPLETED
+    response.workflowState.CopyFrom(state)
+
+    fake_time = [0.0]
+    fake_perf = [0.0]
+
+    def fake_monotonic():
+        return fake_time[0]
+
+    def fake_perf_counter():
+        return fake_perf[0]
+
+    monkeypatch.setattr('dapr.ext.workflow._durabletask.client.time.monotonic', fake_monotonic)
+    monkeypatch.setattr(
+        'dapr.ext.workflow._durabletask.client.time.perf_counter', fake_perf_counter
+    )
+    monkeypatch.setattr('dapr.ext.workflow._durabletask.client.time.sleep', lambda s: None)
+
+    calls = {'n': 0}
+
+    def fake_call(*args, **kwargs):
+        calls['n'] += 1
+        if calls['n'] == 1:
+            fake_time[0] += 10.0  # waited 10s before first restart
+            fake_perf[0] += 10.0
+            raise _make_rpc_error(grpc.StatusCode.CANCELLED)
+        if calls['n'] == 2:
+            fake_time[0] += 60.0  # in-flight wait for 60s before second restart
+            fake_perf[0] += 60.0
+            raise _make_rpc_error(grpc.StatusCode.CANCELLED)
+        fake_time[0] += 5.0
+        fake_perf[0] += 5.0
+        return response
+
     c = TaskHubGrpcClient()
     c._stub = Mock()
-    c._stub.WaitForInstanceCompletion.side_effect = _make_rpc_error(grpc.StatusCode.CANCELLED)
+    c._stub.WaitForInstanceCompletion.side_effect = fake_call
 
-    with pytest.raises(grpc.RpcError) as exc_info:
-        c.wait_for_orchestration_completion('test-instance', timeout=0)
-    assert not isinstance(exc_info.value, TimeoutError)
+    res = c.wait_for_orchestration_completion(instance_id, timeout=0)
+    assert res is not None
+    assert res.runtime_status == OrchestrationStatus.COMPLETED
+    assert calls['n'] == 3
