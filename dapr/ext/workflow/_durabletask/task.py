@@ -532,7 +532,10 @@ class RetryableTask(CompletableTask[T]):
         self._attempt_count += 1
 
     def compute_next_delay(self) -> Optional[timedelta]:
-        if self._attempt_count >= self._retry_policy.max_number_of_attempts:
+        if (
+            self._retry_policy.max_number_of_attempts != -1
+            and self._attempt_count >= self._retry_policy.max_number_of_attempts
+        ):
             return None
 
         retry_expiration: datetime = datetime.max
@@ -553,16 +556,28 @@ class RetryableTask(CompletableTask[T]):
         # be taken, so we're checking whether attempt N+1 would start within the timeout.
         total_elapsed_seconds = 0.0
         next_delay_f = 0.0
+        max_interval_s = (
+            self._retry_policy.max_retry_interval.total_seconds()
+            if self._retry_policy.max_retry_interval is not None
+            else None
+        )
         for i in range(1, self._attempt_count + 1):
-            next_delay_f = (
-                math.pow(backoff_coefficient, i - 1)
-                * self._retry_policy.first_retry_interval.total_seconds()
-            )
-            if self._retry_policy.max_retry_interval is not None:
-                next_delay_f = min(
-                    next_delay_f,
-                    self._retry_policy.max_retry_interval.total_seconds(),
-                )
+            if (
+                max_interval_s is not None
+                and next_delay_f >= max_interval_s
+                and backoff_coefficient >= 1.0
+            ):
+                next_delay_f = max_interval_s
+            else:
+                try:
+                    next_delay_f = (
+                        math.pow(backoff_coefficient, i - 1)
+                        * self._retry_policy.first_retry_interval.total_seconds()
+                    )
+                except OverflowError:
+                    next_delay_f = max_interval_s if max_interval_s is not None else float('inf')
+            if max_interval_s is not None:
+                next_delay_f = min(next_delay_f, max_interval_s)
             total_elapsed_seconds += next_delay_f
 
         logical_next_attempt_start = self._start_time + timedelta(seconds=total_elapsed_seconds)
@@ -747,7 +762,7 @@ class RetryPolicy:
         first_retry_interval : timedelta
             The retry interval to use for the first retry attempt.
         max_number_of_attempts : int
-            The maximum number of retry attempts.
+            The maximum number of retry attempts. Use -1 for infinite retries.
         backoff_coefficient : Optional[float]
             The backoff coefficient to use for calculating the next retry interval.
         max_retry_interval : Optional[timedelta]
@@ -763,8 +778,8 @@ class RetryPolicy:
         # validate inputs
         if first_retry_interval < timedelta(seconds=0):
             raise ValueError('first_retry_interval must be >= 0')
-        if max_number_of_attempts < 1:
-            raise ValueError('max_number_of_attempts must be >= 1')
+        if max_number_of_attempts < 1 and max_number_of_attempts != -1:
+            raise ValueError('max_number_of_attempts must be >= 1 or -1 for infinite retries')
         if backoff_coefficient is not None and backoff_coefficient < 1:
             raise ValueError('backoff_coefficient must be >= 1')
         if max_retry_interval is not None and max_retry_interval < timedelta(seconds=0):

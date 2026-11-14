@@ -193,7 +193,7 @@ Passed to activity functions as the first argument:
 Retry configuration for activities and child workflows:
 
 - `first_retry_interval: timedelta` — initial retry delay
-- `max_number_of_attempts: int` — maximum retries (>= 1)
+- `max_number_of_attempts: int` — maximum retries (>= 1, or -1 for infinite retries)
 - `backoff_coefficient: Optional[float]` — exponential backoff multiplier (>= 1, default 1.0)
 - `max_retry_interval: Optional[timedelta]` — maximum delay between retries
 - `retry_timeout: Optional[timedelta]` — total time budget for retries
