@@ -360,9 +360,10 @@ class AsyncTaskHubGrpcClient:
         output: Optional[Any] = None,
         recursive: bool = True,
         app_id: Optional[str] = None,
+        reason: Optional[str] = None,
     ):
         await self.terminate_orchestration_with_result(
-            instance_id, output=output, recursive=recursive, app_id=app_id
+            instance_id, output=output, recursive=recursive, app_id=app_id, reason=reason
         )
 
     async def terminate_orchestration_with_result(
@@ -372,6 +373,7 @@ class AsyncTaskHubGrpcClient:
         output: Optional[Any] = None,
         recursive: bool = True,
         app_id: Optional[str] = None,
+        reason: Optional[str] = None,
     ) -> pb.TerminateResponse:
         """Like terminate_orchestration, but returns the sidecar's response."""
         req = pb.TerminateRequest(
@@ -379,6 +381,7 @@ class AsyncTaskHubGrpcClient:
             output=wrappers_pb2.StringValue(value=shared.to_json(output)) if output else None,
             recursive=recursive,
             router=new_task_router(app_id),
+            reason=wrappers_pb2.StringValue(value=reason) if reason is not None else None,
         )
 
         self._logger.info(f"Terminating instance '{instance_id}'.")
