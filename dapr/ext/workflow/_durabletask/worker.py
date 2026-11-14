@@ -2432,11 +2432,12 @@ class _OrchestrationExecutor:
                 if not ctx.is_replaying:
                     self._logger.info(f'{ctx.instance_id} Event raised: {event_name}')
                 task_list = ctx._pending_events.get(event_name, None)
-                failure_details = event.eventRaised.failureDetails
+                has_failure_details = event.eventRaised.HasField('failureDetails')
+                failure_details = event.eventRaised.failureDetails if has_failure_details else None
                 decoded_result: Optional[Any] = None
                 if task_list:
                     event_task = task_list.pop(0)
-                    if failure_details:
+                    if has_failure_details:
                         event_task.fail(
                             f"External event '{event.eventRaised.name}' failed: {failure_details.errorMessage}",
                             failure_details,
@@ -2454,7 +2455,7 @@ class _OrchestrationExecutor:
                     if not event_list:
                         event_list = []
                         ctx._received_events[event_name] = event_list
-                    if failure_details:
+                    if has_failure_details:
                         event_list.append(
                             _BufferedExternalEventFailure(event.eventRaised.name, failure_details)
                         )
