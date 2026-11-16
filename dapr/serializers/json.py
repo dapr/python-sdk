@@ -101,7 +101,12 @@ class DaprJSONDecoder(json.JSONDecoder):
     def custom_scanstring(cls, s, end, strict=True):
         (s, end) = json.decoder.scanstring(s, end, strict)  # type: ignore
         if cls.datetime_regex.match(s):
-            return (parser.parse(s), end)
+            # The regex only checks the prefix, so a string such as
+            # '2024-01-01 notes' reaches the parser; keep it as a string.
+            try:
+                return (parser.parse(s), end)
+            except (ValueError, OverflowError):
+                return (s, end)
 
         duration = DAPR_DURATION_PARSER.match(s)
         if duration is not None and duration.lastindex is not None:
