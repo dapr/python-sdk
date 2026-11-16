@@ -358,6 +358,27 @@ def test_history_timestamps_survive_the_round_trip():
 
 
 @pytest.mark.asyncio
+@pytest.mark.parametrize(
+    ('reason', 'has_reason'),
+    [('operator requested', True), ('', True), (None, False)],
+)
+async def test_async_terminate_preserves_reason_separately_from_output(reason, has_reason):
+    client = _async_client()
+    stub = client._get_stub()
+    stub.TerminateInstance = AsyncMock(return_value=pb.TerminateResponse())
+
+    await client.terminate_orchestration(
+        'instance1', output={'result': 'cancelled'}, reason=reason
+    )
+
+    req = stub.TerminateInstance.call_args[0][0]
+    assert req.output.value == '{"result": "cancelled"}'
+    assert req.HasField('reason') is has_reason
+    if has_reason:
+        assert req.reason.value == reason
+
+
+@pytest.mark.asyncio
 async def test_async_list_instance_ids_forwards_pagination_fields():
     client = _async_client()
     client._get_stub().ListInstanceIDs = AsyncMock(return_value=pb.ListInstanceIDsResponse())
