@@ -6,6 +6,10 @@ In the s`subscriber.py` file it creates a subscriber object that can call the `n
 
 If the stream fails with a transient gRPC error (UNAVAILABLE, UNKNOWN or INTERNAL) or the server ends it, `await next_message()` reconnects and reads from the new stream, with a jittered exponential backoff between reconnects. After 5 failed reconnects in one call, `await next_message()` (and `async for message in subscription`) raises `StreamReconnectError`, exported from `dapr.common.pubsub.subscription` next to `StreamInactiveError` and `StreamCancelledError`. Catch it alongside those errors if your loop should outlast a longer sidecar outage.
 
+This is the client-side streaming subscription API, where your code pulls messages. For the
+server-side callback model — where Dapr delivers messages to `@app.subscribe` handlers on an
+asyncio gRPC app — see [`pubsub-simple-async`](../pubsub-simple-async).
+
 
 > **Note:** Make sure to use the latest proto bindings
 

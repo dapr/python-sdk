@@ -14,7 +14,7 @@ limitations under the License.
 """
 
 import warnings
-from typing import Callable, Dict, List, Optional, Tuple, Union
+from typing import Any, Callable, Dict, List, Optional, Protocol, Tuple, Union
 
 import grpc
 from cloudevents.sdk.event import v1  # type: ignore
@@ -32,6 +32,7 @@ from dapr.proto.runtime.v1.appcallback_pb2 import (
     BindingEventRequest,
     JobEventRequest,
     TopicEventBulkRequest,
+    TopicEventBulkRequestEntry,
     TopicEventBulkResponse,
     TopicEventRequest,
 )
@@ -44,6 +45,23 @@ BindingCallable = Callable[[BindingRequest], None]
 JobEventCallable = Callable[[JobEvent], None]
 
 DELIMITER = ':'
+
+HandlerResponse = Union[str, bytes, GrpcMessage, InvokeMethodResponse]
+
+
+class _ServicerContext(Protocol):
+    """The subset of the gRPC servicer context the shared helpers rely on.
+
+    Declared structurally because the synchronous and asyncio servicers are handed a
+    ``grpc.ServicerContext`` and a ``grpc.aio.ServicerContext`` respectively, which share no
+    common base class but expose these members identically.
+    """
+
+    def set_code(self, code: grpc.StatusCode) -> None: ...
+
+    def set_details(self, details: str) -> None: ...
+
+    def invocation_metadata(self) -> Any: ...
 
 
 class Rule:
@@ -62,16 +80,16 @@ class _RegisteredSubscription:
         self.rules = rules
 
 
-class _CallbackServicer(
+class _CallbackServicerBase(
     appcallback_service_v1.AppCallbackServicer, appcallback_service_v1.AppCallbackAlphaServicer
 ):
-    """The implementation of AppCallback Server.
+    """Handler registration and request translation shared by the sync and asyncio servicers.
 
-    This internal class implements application server and provides helpers to register
-    method, topic, and input bindings. It implements the routing handling logic to route
-    mulitple methods, topics, and bindings.
-
-    :class:`App` provides useful decorators to register method, topic, input bindings.
+    Holds every part of the AppCallback implementation that does not invoke a user handler:
+    the handler registries, the topic routing table, and the translation of incoming gRPC
+    requests into the SDK types handlers receive. :class:`_CallbackServicer` and
+    :class:`dapr.ext.grpc.aio._servicer._AioCallbackServicer` add the gRPC entry points on
+    top, which differ only in whether they await the handler.
     """
 
     def __init__(self):
@@ -199,117 +217,98 @@ class _CallbackServicer(
             raise ValueError(f'Job event handler for {name} is already registered')
         self._job_event_map[name] = cb
 
-    def OnInvoke(self, request: InvokeRequest, context):
-        """Invokes service method with InvokeRequest."""
-        if request.method not in self._invoke_method_map:
-            context.set_code(grpc.StatusCode.UNIMPLEMENTED)  # type: ignore
-            raise NotImplementedError(f'{request.method} method not implemented!')
+    def _unimplemented(self, context: _ServicerContext, message: str) -> NotImplementedError:
+        """Marks the RPC UNIMPLEMENTED and returns the error for the caller to raise."""
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)  # type: ignore
+        return NotImplementedError(message)
 
+    def _build_invoke_request(
+        self, request: InvokeRequest, context: _ServicerContext
+    ) -> InvokeMethodRequest:
+        """Translates an InvokeRequest into the request object handlers receive."""
         req = InvokeMethodRequest(request.data, request.content_type)
         req.metadata = context.invocation_metadata()
-        resp = self._invoke_method_map[request.method](req)
+        return req
 
-        if not resp:
-            return common_v1.InvokeResponse()
+    def _to_invoke_response_data(
+        self, resp: HandlerResponse, context: _ServicerContext, method: str
+    ) -> InvokeMethodResponse:
+        """Normalizes a method handler's return value into an InvokeMethodResponse."""
+        if isinstance(resp, InvokeMethodResponse):
+            return resp
 
         resp_data = InvokeMethodResponse()
         if isinstance(resp, (bytes, str)):
             resp_data.set_data(resp)
             resp_data.content_type = DEFAULT_JSON_CONTENT_TYPE
-        elif isinstance(resp, GrpcMessage):
+            return resp_data
+        if isinstance(resp, GrpcMessage):
             resp_data.set_data(resp)
-        elif isinstance(resp, InvokeMethodResponse):
-            resp_data = resp
-        else:
-            context.set_code(grpc.StatusCode.OUT_OF_RANGE)
-            context.set_details(f'{type(resp)} is the invalid return type.')
-            raise NotImplementedError(f'{request.method} method not implemented!')
+            return resp_data
 
-        if len(resp_data.get_headers()) > 0:
-            context.send_initial_metadata(resp_data.get_headers())
+        context.set_code(grpc.StatusCode.OUT_OF_RANGE)
+        context.set_details(f'{type(resp)} is the invalid return type.')
+        raise NotImplementedError(f'{method} method not implemented!')
 
+    def _to_invoke_response(self, resp_data: InvokeMethodResponse) -> common_v1.InvokeResponse:
+        """Packs a normalized handler response into the wire InvokeResponse."""
         content_type = ''
         if resp_data.content_type:
             content_type = resp_data.content_type
-
         return common_v1.InvokeResponse(data=resp_data.proto, content_type=content_type)
 
-    def ListTopicSubscriptions(self, request, context):
-        """Lists all topics subscribed by this app."""
-        return appcallback_v1.ListTopicSubscriptionsResponse(subscriptions=self._registered_topics)
+    def _build_topic_event(
+        self,
+        cb: TopicSubscribeCallable,
+        request: TopicEventRequest,
+        invocation_metadata: Dict[str, str],
+    ) -> Union[v1.Event, SubscriptionMessage]:
+        """Translates a topic event request into the event type the handler expects."""
+        if not self._topic_legacy_event.get(cb, True):
+            return SubscriptionMessage(request, invocation_metadata)
 
-    def OnTopicEvent(self, request: TopicEventRequest, context):
-        """Subscribes events from Pubsub."""
-        cb = self._get_topic_callback(request.pubsub_name, request.topic, request.path)
-        if cb is None:
-            context.set_code(grpc.StatusCode.UNIMPLEMENTED)  # type: ignore
-            raise NotImplementedError(f'topic {request.topic} is not implemented!')
+        customdata: Struct = request.extensions
+        extensions = dict()
+        for k, v in customdata.items():
+            extensions[k] = v
+        for k, v in invocation_metadata.items():
+            extensions['_metadata_' + k] = v
 
-        invocation_metadata = dict(context.invocation_metadata())
+        event = v1.Event()
+        event.SetEventType(request.type)
+        event.SetEventID(request.id)
+        event.SetSource(request.source)
+        event.SetData(request.data)
+        event.SetContentType(request.data_content_type)
+        event.SetSubject(request.topic)
+        event.SetExtensions(extensions)
+        return event
 
-        event: Union[v1.Event, SubscriptionMessage]
-        if self._topic_legacy_event.get(cb, True):
-            customdata: Struct = request.extensions
-            extensions = dict()
-            for k, v in customdata.items():
-                extensions[k] = v
-            for k, v in invocation_metadata.items():
-                extensions['_metadata_' + k] = v
-
-            event = v1.Event()
-            event.SetEventType(request.type)
-            event.SetEventID(request.id)
-            event.SetSource(request.source)
-            event.SetData(request.data)
-            event.SetContentType(request.data_content_type)
-            event.SetSubject(request.topic)
-            event.SetExtensions(extensions)
-        else:
-            event = SubscriptionMessage(request, invocation_metadata)
-
-        response = cb(event)
+    def _to_topic_event_response(
+        self, response: Optional[TopicEventResponse]
+    ) -> Union[appcallback_v1.TopicEventResponse, empty_pb2.Empty]:
+        """Maps a topic handler's return value to the single-event wire response."""
         if isinstance(response, TopicEventResponse):
             return appcallback_v1.TopicEventResponse(status=response.status.value)
         return empty_pb2.Empty()
 
-    def ListInputBindings(self, request, context):
-        """Lists all input bindings subscribed by this app."""
-        return appcallback_v1.ListInputBindingsResponse(bindings=self._registered_bindings)
-
-    def OnBindingEvent(self, request: BindingEventRequest, context):
-        """Listens events from the input bindings
-        User application can save the states or send the events to the output
-        bindings optionally by returning BindingEventResponse.
-        """
-        if request.name not in self._binding_map:
-            context.set_code(grpc.StatusCode.UNIMPLEMENTED)  # type: ignore
-            raise NotImplementedError(f'{request.name} binding not implemented!')
-
+    def _build_binding_request(
+        self, request: BindingEventRequest, context: _ServicerContext
+    ) -> BindingRequest:
+        """Translates a binding event request into the request object handlers receive."""
         req = BindingRequest(request.data, dict(request.metadata))
         req.metadata = context.invocation_metadata()
-        self._binding_map[request.name](req)
+        return req
 
-        # TODO: support output bindings options
-        return appcallback_v1.BindingEventResponse()
+    def _build_job_event(self, request: JobEventRequest, context: _ServicerContext) -> JobEvent:
+        """Translates a job event request into the JobEvent handlers receive.
 
-    def _handle_job_event(self, request: JobEventRequest, context):
-        """Handles job events from Dapr runtime.
-
-        This method is called by Dapr when a scheduled job is triggered.
-        It routes the job event to the appropriate registered handler based on the job name.
-
-        Args:
-            request (JobEventRequest): The job event request from Dapr.
-            context: The gRPC context.
-
-        Returns:
-            appcallback_v1.JobEventResponse: Empty response indicating successful handling.
+        Raises NotImplementedError (UNIMPLEMENTED) when no handler is registered for the job.
         """
-        job_name = request.name
-
-        if job_name not in self._job_event_map:
-            context.set_code(grpc.StatusCode.UNIMPLEMENTED)  # type: ignore
-            raise NotImplementedError(f'Job event handler for {job_name} not implemented!')
+        if request.name not in self._job_event_map:
+            raise self._unimplemented(
+                context, f'Job event handler for {request.name} not implemented!'
+            )
 
         # Create a JobEvent object matching Go SDK's common.JobEvent
         # Extract raw data bytes from the Any proto (matching Go implementation)
@@ -317,60 +316,39 @@ class _CallbackServicer(
         if request.HasField('data') and request.data.value:
             data_bytes = request.data.value
 
-        job_event = JobEvent(name=request.name, data=data_bytes)
+        return JobEvent(name=request.name, data=data_bytes)
 
-        # Call the registered handler with the JobEvent object
-        self._job_event_map[job_name](job_event)
+    def _warn_bulk_alpha1_deprecated(self) -> None:
+        """Emits the shared deprecation warning for the alpha bulk-topic entry point."""
+        warnings.warn(
+            'OnBulkTopicEventAlpha1 is deprecated. Use OnBulkTopicEvent instead.',
+            DeprecationWarning,
+            stacklevel=3,
+        )
 
-        # Return empty response
-        return appcallback_v1.JobEventResponse()
+    def _bulk_entry_event(
+        self,
+        entry: TopicEventBulkRequestEntry,
+        request: TopicEventBulkRequest,
+        use_legacy_event: bool,
+        invocation_metadata: Dict[str, str],
+    ) -> Union[v1.Event, SubscriptionMessage]:
+        """Translates one bulk entry into the event type the handler expects."""
+        if use_legacy_event:
+            return self._bulk_entry_legacy_event(entry, request, invocation_metadata)
+        return self._bulk_entry_subscription_message(entry, request, invocation_metadata)
 
-    def OnJobEvent(self, request: JobEventRequest, context):
-        """Handles job events on the stable AppCallback service."""
-        return self._handle_job_event(request, context)
-
-    def OnJobEventAlpha1(self, request: JobEventRequest, context):
-        """Handles job events on the deprecated AppCallbackAlpha service."""
-        return self._handle_job_event(request, context)
-
-    def _handle_bulk_topic_event(
-        self, request: TopicEventBulkRequest, context
-    ) -> Optional[TopicEventBulkResponse]:
-        """Process bulk topic event request - routes each entry to the appropriate topic handler."""
-        cb = self._get_topic_callback(request.pubsub_name, request.topic, request.path)
-        if cb is None:
-            return None  # we don't have a handler
-
-        use_legacy_event = self._topic_legacy_event.get(cb, True)
-        invocation_metadata = dict(context.invocation_metadata())
-
-        statuses = []
-        for entry in request.entries:
-            entry_id = entry.entry_id
-            try:
-                event: Union[v1.Event, SubscriptionMessage]
-                if use_legacy_event:
-                    event = self._bulk_entry_legacy_event(entry, request, invocation_metadata)
-                else:
-                    event = self._bulk_entry_subscription_message(
-                        entry, request, invocation_metadata
-                    )
-
-                response = cb(event)  # invoke app registered handler and send event
-                if isinstance(response, TopicEventResponse):
-                    status = response.status.value
-                else:
-                    status = appcallback_v1.TopicEventResponse.TopicEventResponseStatus.SUCCESS
-            except Exception:
-                status = appcallback_v1.TopicEventResponse.TopicEventResponseStatus.RETRY
-            statuses.append(
-                appcallback_v1.TopicEventBulkResponseEntry(entry_id=entry_id, status=status)
-            )
-        return appcallback_v1.TopicEventBulkResponse(statuses=statuses)
+    def _bulk_entry_status(
+        self, response: Optional[TopicEventResponse]
+    ) -> appcallback_v1.TopicEventResponse.TopicEventResponseStatus.ValueType:
+        """Maps a topic handler's return value to a bulk-response entry status."""
+        if isinstance(response, TopicEventResponse):
+            return response.status.value
+        return appcallback_v1.TopicEventResponse.TopicEventResponseStatus.SUCCESS
 
     def _bulk_entry_legacy_event(
         self,
-        entry,
+        entry: TopicEventBulkRequestEntry,
         request: TopicEventBulkRequest,
         invocation_metadata: Dict[str, str],
     ) -> v1.Event:
@@ -403,7 +381,7 @@ class _CallbackServicer(
 
     def _bulk_entry_subscription_message(
         self,
-        entry,
+        entry: TopicEventBulkRequestEntry,
         request: TopicEventBulkRequest,
         invocation_metadata: Dict[str, str],
     ) -> SubscriptionMessage:
@@ -432,25 +410,126 @@ class _CallbackServicer(
         metadata = {**invocation_metadata, **dict(entry.metadata)}
         return SubscriptionMessage(entry_request, metadata)
 
+
+class _CallbackServicer(_CallbackServicerBase):
+    """The implementation of AppCallback Server.
+
+    This internal class implements application server and provides helpers to register
+    method, topic, and input bindings. It implements the routing handling logic to route
+    mulitple methods, topics, and bindings.
+
+    :class:`App` provides useful decorators to register method, topic, input bindings.
+    """
+
+    def OnInvoke(self, request: InvokeRequest, context):
+        """Invokes service method with InvokeRequest."""
+        if request.method not in self._invoke_method_map:
+            raise self._unimplemented(context, f'{request.method} method not implemented!')
+
+        req = self._build_invoke_request(request, context)
+        resp = self._invoke_method_map[request.method](req)
+
+        if not resp:
+            return common_v1.InvokeResponse()
+
+        resp_data = self._to_invoke_response_data(resp, context, request.method)
+
+        headers = resp_data.get_headers()
+        if len(headers) > 0:
+            context.send_initial_metadata(headers)
+
+        return self._to_invoke_response(resp_data)
+
+    def ListTopicSubscriptions(self, request, context):
+        """Lists all topics subscribed by this app."""
+        return appcallback_v1.ListTopicSubscriptionsResponse(subscriptions=self._registered_topics)
+
+    def OnTopicEvent(self, request: TopicEventRequest, context):
+        """Subscribes events from Pubsub."""
+        cb = self._get_topic_callback(request.pubsub_name, request.topic, request.path)
+        if cb is None:
+            raise self._unimplemented(context, f'topic {request.topic} is not implemented!')
+
+        event = self._build_topic_event(cb, request, dict(context.invocation_metadata()))
+
+        return self._to_topic_event_response(cb(event))
+
+    def ListInputBindings(self, request, context):
+        """Lists all input bindings subscribed by this app."""
+        return appcallback_v1.ListInputBindingsResponse(bindings=self._registered_bindings)
+
+    def OnBindingEvent(self, request: BindingEventRequest, context):
+        """Listens events from the input bindings
+        User application can save the states or send the events to the output
+        bindings optionally by returning BindingEventResponse.
+        """
+        if request.name not in self._binding_map:
+            raise self._unimplemented(context, f'{request.name} binding not implemented!')
+
+        req = self._build_binding_request(request, context)
+        self._binding_map[request.name](req)
+
+        # TODO: support output bindings options
+        return appcallback_v1.BindingEventResponse()
+
+    def _handle_job_event(self, request: JobEventRequest, context):
+        """Handles job events from Dapr runtime.
+
+        This method is called by Dapr when a scheduled job is triggered.
+        It routes the job event to the appropriate registered handler based on the job name.
+
+        Args:
+            request (JobEventRequest): The job event request from Dapr.
+            context: The gRPC context.
+
+        Returns:
+            appcallback_v1.JobEventResponse: Empty response indicating successful handling.
+        """
+        job_event = self._build_job_event(request, context)
+        self._job_event_map[request.name](job_event)
+        return appcallback_v1.JobEventResponse()
+
+    def OnJobEvent(self, request: JobEventRequest, context):
+        """Handles job events on the stable AppCallback service."""
+        return self._handle_job_event(request, context)
+
+    def OnJobEventAlpha1(self, request: JobEventRequest, context):
+        """Handles job events on the deprecated AppCallbackAlpha service."""
+        return self._handle_job_event(request, context)
+
+    def _handle_bulk_topic_event(
+        self, request: TopicEventBulkRequest, context: _ServicerContext
+    ) -> TopicEventBulkResponse:
+        """Process bulk topic event request - routes each entry to the appropriate topic handler."""
+        cb = self._get_topic_callback(request.pubsub_name, request.topic, request.path)
+        if cb is None:
+            raise self._unimplemented(context, f'bulk topic {request.topic} is not implemented!')
+
+        use_legacy_event = self._topic_legacy_event.get(cb, True)
+        invocation_metadata = dict(context.invocation_metadata())
+
+        statuses = []
+        for entry in request.entries:
+            entry_id = entry.entry_id
+            try:
+                event = self._bulk_entry_event(
+                    entry, request, use_legacy_event, invocation_metadata
+                )
+                status = self._bulk_entry_status(cb(event))
+            except Exception:
+                status = appcallback_v1.TopicEventResponse.TopicEventResponseStatus.RETRY
+            statuses.append(
+                appcallback_v1.TopicEventBulkResponseEntry(entry_id=entry_id, status=status)
+            )
+        return appcallback_v1.TopicEventBulkResponse(statuses=statuses)
+
     def OnBulkTopicEvent(self, request: TopicEventBulkRequest, context):
         """Subscribes bulk events from Pubsub"""
-        response = self._handle_bulk_topic_event(request, context)
-        if response is None:
-            context.set_code(grpc.StatusCode.UNIMPLEMENTED)  # type: ignore
-            raise NotImplementedError(f'bulk topic {request.topic} is not implemented!')
-        return response
+        return self._handle_bulk_topic_event(request, context)
 
     def OnBulkTopicEventAlpha1(self, request: TopicEventBulkRequest, context):
         """Subscribes bulk events from Pubsub.
         Deprecated: Use OnBulkTopicEvent instead.
         """
-        warnings.warn(
-            'OnBulkTopicEventAlpha1 is deprecated. Use OnBulkTopicEvent instead.',
-            DeprecationWarning,
-            stacklevel=2,
-        )
-        response = self._handle_bulk_topic_event(request, context)
-        if response is None:
-            context.set_code(grpc.StatusCode.UNIMPLEMENTED)  # type: ignore
-            raise NotImplementedError(f'bulk topic {request.topic} is not implemented!')
-        return response
+        self._warn_bulk_alpha1_deprecated()
+        return self._handle_bulk_topic_event(request, context)
