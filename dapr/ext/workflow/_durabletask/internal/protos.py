@@ -22,4 +22,5 @@ from google.protobuf import duration_pb2, empty_pb2, timestamp_pb2, wrappers_pb2
 from dapr.ext.workflow._durabletask.internal.orchestration_pb2 import *  # noqa: F401, F403
 from dapr.ext.workflow._durabletask.internal.history_events_pb2 import *  # noqa: F401, F403
 from dapr.ext.workflow._durabletask.internal.orchestrator_actions_pb2 import *  # noqa: F401, F403
+from dapr.ext.workflow._durabletask.internal.workflow_schedule_pb2 import *  # noqa: F401, F403
 from dapr.ext.workflow._durabletask.internal.orchestrator_service_pb2 import *  # noqa: F401, F403

@@ -15,7 +15,8 @@
 
 # Regenerate Python protobuf/gRPC stubs for the vendored durabletask package.
 #
-# Proto source files are fetched from the durabletask-protobuf repository, or
+# Proto source files are fetched from the durabletask-protobuf repository at
+# the branch or tag named by DURABLETASK_PROTOBUF_BRANCH (default main), or
 # taken from a local checkout when DURABLETASK_PROTOBUF_DIR is set.
 # Generated output goes to dapr/ext/workflow/_durabletask/internal/
 #
@@ -69,7 +70,7 @@ else
     tmp="$(mktemp -d)"
     trap 'rm -rf "$tmp"' EXIT
 
-    url="https://github.com/dapr/durabletask-protobuf/archive/refs/heads/${DURABLETASK_PROTOBUF_BRANCH}.tar.gz"
+    url="https://github.com/dapr/durabletask-protobuf/archive/${DURABLETASK_PROTOBUF_BRANCH}.tar.gz"
 
     echo "Downloading durabletask-protobuf from ${url}..."
     pushd "$tmp" > /dev/null
