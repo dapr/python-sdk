@@ -82,6 +82,12 @@ class AsyncTaskHubGrpcClient:
         self._channel: grpc.aio.Channel | None = None
         self._stub: stubs.TaskHubSidecarServiceStub | None = None
         self._logger = shared.get_logger('client', log_handler, log_formatter)
+        self._is_closed = False
+
+    @property
+    def is_closed(self) -> bool:
+        """Returns True if the client has been closed."""
+        return self._is_closed
 
     def _get_stub(self) -> stubs.TaskHubSidecarServiceStub:
         """Lazily create the channel and stub on first use.
@@ -99,8 +105,14 @@ class AsyncTaskHubGrpcClient:
         return self._stub
 
     async def aclose(self):
+        """Close the underlying gRPC channel."""
+        self._is_closed = True
         if self._channel is not None:
             await self._channel.close()
+
+    async def close(self):
+        """Alias for aclose()."""
+        await self.aclose()
 
     async def __aenter__(self):
         return self
@@ -287,6 +299,15 @@ class AsyncTaskHubGrpcClient:
                     raise _TransientTimeout()
                 if TaskHubGrpcClient._is_deadline_cancellation(code, deadline):
                     raise _TransientTimeout()
+                details = (
+                    rpc_error.details()
+                    if hasattr(rpc_error, 'details') and callable(rpc_error.details)
+                    else str(rpc_error)
+                ) or ''
+                if self._is_closed or (
+                    code == grpc.StatusCode.CANCELLED and 'channel closed' in details.lower()
+                ):
+                    raise
                 if code not in self._TRANSIENT_RPC_CODES:
                     raise
 

@@ -10,7 +10,8 @@
 # limitations under the License.
 
 import asyncio
-from unittest.mock import Mock, patch
+from typing import Optional
+from unittest.mock import AsyncMock, Mock, patch
 
 import grpc
 import pytest
@@ -28,10 +29,10 @@ METADATA = [('key1', 'value1'), ('key2', 'value2')]
 INTERCEPTORS_AIO = [DefaultClientInterceptorImpl(METADATA)]
 
 
-def _make_async_rpc_error(code: grpc.StatusCode) -> grpc.RpcError:
+def _make_async_rpc_error(code: grpc.StatusCode, details: Optional[str] = None) -> grpc.RpcError:
     err = grpc.RpcError()
     err.code = lambda: code  # type: ignore[method-assign]
-    err.details = lambda: f'simulated {code.name}'  # type: ignore[method-assign]
+    err.details = lambda: details if details is not None else f'simulated {code.name}'  # type: ignore[method-assign]
     return err
 
 
@@ -391,3 +392,106 @@ async def test_unbounded_wait_retries_across_multiple_sidecar_restarts(monkeypat
     assert res is not None
     assert res.runtime_status == OrchestrationStatus.COMPLETED
     assert calls['n'] == 3
+
+
+async def test_async_client_aclose_sets_is_closed():
+    """Closing the async client marks is_closed as True."""
+    client = AsyncTaskHubGrpcClient()
+    mock_channel = AsyncMock()
+    client._channel = mock_channel
+    assert not client.is_closed
+    await client.aclose()
+    assert client.is_closed
+    mock_channel.close.assert_awaited_once()
+
+
+async def test_async_cancelled_when_client_closed_reraises_immediately(monkeypatch):
+    """When the async client is closed locally, CANCELLED is not retried and raises immediately."""
+    instance_id = 'test-instance'
+    sleeps = []
+
+    async def fake_sleep(s):
+        sleeps.append(s)
+
+    monkeypatch.setattr('asyncio.sleep', fake_sleep)
+
+    client = AsyncTaskHubGrpcClient()
+    mock_channel = AsyncMock()
+    client._channel = mock_channel
+    await client.aclose()
+
+    calls = {'n': 0}
+
+    async def fake_call(*args, **kwargs):
+        calls['n'] += 1
+        raise _make_async_rpc_error(grpc.StatusCode.CANCELLED)
+
+    client._stub = Mock()
+    client._stub.WaitForInstanceCompletion = fake_call
+
+    with pytest.raises(grpc.RpcError):
+        await client.wait_for_orchestration_completion(instance_id, timeout=0)
+
+    assert calls['n'] == 1
+    assert len(sleeps) == 0
+
+
+async def test_async_cancelled_with_channel_closed_details_reraises_immediately(monkeypatch):
+    """When CANCELLED details indicate channel closure, async wait re-raises immediately."""
+    instance_id = 'test-instance'
+    sleeps = []
+
+    async def fake_sleep(s):
+        sleeps.append(s)
+
+    monkeypatch.setattr('asyncio.sleep', fake_sleep)
+
+    client = AsyncTaskHubGrpcClient()
+    calls = {'n': 0}
+
+    async def fake_call(*args, **kwargs):
+        calls['n'] += 1
+        raise _make_async_rpc_error(grpc.StatusCode.CANCELLED, details='Channel closed!')
+
+    client._stub = Mock()
+    client._stub.WaitForInstanceCompletion = fake_call
+
+    with pytest.raises(grpc.RpcError):
+        await client.wait_for_orchestration_completion(instance_id, timeout=0)
+
+    assert calls['n'] == 1
+    assert len(sleeps) == 0
+
+
+async def test_async_in_flight_cancellation_on_client_aclose_repro(monkeypatch):
+    """Repro from CasperGN: async WaitForInstanceCompletion in flight is aborted when
+    aclose() is invoked. Must re-raise grpc.RpcError immediately without attempting to retry.
+    """
+    instance_id = 'test-instance'
+    sleeps = []
+
+    async def fake_sleep(s):
+        sleeps.append(s)
+
+    monkeypatch.setattr('asyncio.sleep', fake_sleep)
+
+    client = AsyncTaskHubGrpcClient()
+    client._channel = AsyncMock()
+
+    calls = {'n': 0}
+
+    async def fake_wait(*args, **kwargs):
+        calls['n'] += 1
+        await client.aclose()
+        raise _make_async_rpc_error(grpc.StatusCode.CANCELLED, details='Channel closed!')
+
+    client._stub = Mock()
+    client._stub.WaitForInstanceCompletion = fake_wait
+
+    with pytest.raises(grpc.RpcError) as exc_info:
+        await client.wait_for_orchestration_completion(instance_id, timeout=0)
+
+    assert isinstance(exc_info.value, grpc.RpcError)
+    assert not isinstance(exc_info.value, ValueError)
+    assert calls['n'] == 1
+    assert len(sleeps) == 0

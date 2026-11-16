@@ -793,3 +793,23 @@ class DaprWorkflowClient:
             app_id=app_id,
         )
         return WorkflowRerunResult(new_instance_id=res.newInstanceID, staged=res.staged)
+
+    @property
+    def is_closed(self) -> bool:
+        """Returns True if the client has been closed."""
+        return self.__obj.is_closed
+
+    async def aclose(self):
+        """Closes the gRPC connection used by the client."""
+        await self.__obj.aclose()
+
+    async def close(self):
+        """Closes the gRPC connection used by the client."""
+        await self.aclose()
+
+    async def __aenter__(self):
+        return self
+
+    async def __aexit__(self, exc_type, exc_val, exc_tb):
+        await self.aclose()
+        return False

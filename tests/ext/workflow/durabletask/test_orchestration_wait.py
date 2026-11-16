@@ -1,4 +1,5 @@
 import time
+from typing import Optional
 from unittest.mock import Mock
 
 import grpc
@@ -71,10 +72,10 @@ def test_wait_for_orchestration_completion_timeout(timeout):
         assert kwargs.get('timeout') == timeout
 
 
-def _make_rpc_error(code: grpc.StatusCode) -> grpc.RpcError:
+def _make_rpc_error(code: grpc.StatusCode, details: Optional[str] = None) -> grpc.RpcError:
     err = grpc.RpcError()
     err.code = lambda: code  # type: ignore[method-assign]
-    err.details = lambda: f'simulated {code.name}'  # type: ignore[method-assign]
+    err.details = lambda: details if details is not None else f'simulated {code.name}'  # type: ignore[method-assign]
     return err
 
 
@@ -382,3 +383,87 @@ def test_unbounded_wait_retries_across_multiple_sidecar_restarts(monkeypatch):
     assert res is not None
     assert res.runtime_status == OrchestrationStatus.COMPLETED
     assert calls['n'] == 3
+
+
+def test_client_close_sets_is_closed():
+    """Closing the client marks is_closed as True."""
+    c = TaskHubGrpcClient()
+    c._channel = Mock()
+    assert not c.is_closed
+    c.close()
+    assert c.is_closed
+
+
+def test_cancelled_when_client_closed_reraises_immediately_without_retry(monkeypatch):
+    """When the client is closed locally, CANCELLED is not retried and raises immediately."""
+    instance_id = 'test-instance'
+    sleeps = []
+    monkeypatch.setattr(
+        'dapr.ext.workflow._durabletask.client.time.sleep', lambda s: sleeps.append(s)
+    )
+
+    c = TaskHubGrpcClient()
+    c._channel = Mock()
+    c.close()
+    c._stub = Mock()
+    c._stub.WaitForInstanceCompletion.side_effect = _make_rpc_error(grpc.StatusCode.CANCELLED)
+
+    with pytest.raises(grpc.RpcError):
+        c.wait_for_orchestration_completion(instance_id, timeout=0)
+
+    assert c._stub.WaitForInstanceCompletion.call_count == 1
+    assert len(sleeps) == 0
+
+
+def test_cancelled_with_channel_closed_details_reraises_immediately(monkeypatch):
+    """When CANCELLED details indicate channel closure, it is raised immediately without retry."""
+    instance_id = 'test-instance'
+    sleeps = []
+    monkeypatch.setattr(
+        'dapr.ext.workflow._durabletask.client.time.sleep', lambda s: sleeps.append(s)
+    )
+
+    c = TaskHubGrpcClient()
+    c._stub = Mock()
+    c._stub.WaitForInstanceCompletion.side_effect = _make_rpc_error(
+        grpc.StatusCode.CANCELLED, details='Channel closed!'
+    )
+
+    with pytest.raises(grpc.RpcError):
+        c.wait_for_orchestration_completion(instance_id, timeout=0)
+
+    assert c._stub.WaitForInstanceCompletion.call_count == 1
+    assert len(sleeps) == 0
+
+
+def test_in_flight_cancellation_on_client_close_repro(monkeypatch):
+    """Repro from CasperGN: WaitForInstanceCompletion in flight is aborted when the client
+    is closed locally. Must re-raise grpc.RpcError immediately without attempting to invoke
+    a new RPC on the closed channel (which would raise ValueError: Cannot invoke RPC on closed channel!).
+    """
+    instance_id = 'test-instance'
+    sleeps = []
+    monkeypatch.setattr(
+        'dapr.ext.workflow._durabletask.client.time.sleep', lambda s: sleeps.append(s)
+    )
+
+    c = TaskHubGrpcClient()
+    c._channel = Mock()
+
+    def fake_wait(*args, **kwargs):
+        # Client is closed while wait is in-flight
+        c.close()
+        # gRPC raises CANCELLED on channel closure
+        raise _make_rpc_error(grpc.StatusCode.CANCELLED, details='Channel closed!')
+
+    c._stub = Mock()
+    c._stub.WaitForInstanceCompletion.side_effect = fake_wait
+
+    with pytest.raises(grpc.RpcError) as exc_info:
+        c.wait_for_orchestration_completion(instance_id, timeout=0)
+
+    # Must be grpc.RpcError, NOT ValueError("Cannot invoke RPC on closed channel!")
+    assert isinstance(exc_info.value, grpc.RpcError)
+    assert not isinstance(exc_info.value, ValueError)
+    assert c._stub.WaitForInstanceCompletion.call_count == 1
+    assert len(sleeps) == 0

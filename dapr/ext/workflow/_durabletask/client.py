@@ -278,6 +278,12 @@ class TaskHubGrpcClient:
         self._channel = channel
         self._stub = stubs.TaskHubSidecarServiceStub(channel)
         self._logger = shared.get_logger('client', log_handler, log_formatter)
+        self._is_closed = False
+
+    @property
+    def is_closed(self) -> bool:
+        """Returns True if the client has been closed."""
+        return self._is_closed
 
     def __enter__(self):
         return self
@@ -291,6 +297,7 @@ class TaskHubGrpcClient:
 
     def close(self) -> None:
         """Close the underlying gRPC channel."""
+        self._is_closed = True
         try:
             # grpc.Channel.close() is idempotent
             self._channel.close()
@@ -461,8 +468,9 @@ class TaskHubGrpcClient:
         As a bounded wait times out, the sidecar can reset the stream (RST_STREAM
         CANCEL) marginally before gRPC raises DEADLINE_EXCEEDED locally, so the same
         expiry surfaces as CANCELLED. Callers asked for a timeout and must see
-        TimeoutError either way. Requiring the budget to be spent keeps a genuine
-        cancellation, or a reset with time still on the clock, propagating as-is.
+        TimeoutError either way. When the deadline has not expired, server-sent
+        cancellations are treated as transient errors and retried until the budget
+        elapses or the client is closed locally.
         """
         if code != grpc.StatusCode.CANCELLED or deadline is None:
             return False
@@ -498,6 +506,15 @@ class TaskHubGrpcClient:
                     raise _TransientTimeout()
                 if self._is_deadline_cancellation(code, deadline):
                     raise _TransientTimeout()
+                details = (
+                    rpc_error.details()
+                    if hasattr(rpc_error, 'details') and callable(rpc_error.details)
+                    else str(rpc_error)
+                ) or ''
+                if self._is_closed or (
+                    code == grpc.StatusCode.CANCELLED and 'channel closed' in details.lower()
+                ):
+                    raise
                 if code not in self._TRANSIENT_RPC_CODES:
                     raise
 
