@@ -538,53 +538,54 @@ class RetryableTask(CompletableTask[T]):
         ):
             return None
 
-        retry_expiration: datetime = datetime.max
-        if (
-            self._retry_policy.retry_timeout is not None
-            and self._retry_policy.retry_timeout != datetime.max
-        ):
-            retry_expiration = self._start_time + self._retry_policy.retry_timeout
-
         if self._retry_policy.backoff_coefficient is None:
             backoff_coefficient = 1.0
         else:
             backoff_coefficient = self._retry_policy.backoff_coefficient
 
-        # Compute the next delay and the logical start time of the next attempt
-        # deterministically from accumulated delays, avoiding non-determinism during replay.
-        # range(1, attempt_count + 1) sums all delays up to and including the one about to
-        # be taken, so we're checking whether attempt N+1 would start within the timeout.
-        total_elapsed_seconds = 0.0
-        next_delay_f = 0.0
+        # timedelta.max in integer seconds (999999999 days, 23:59:59)
+        max_timedelta_seconds = 999999999 * 86400 + 86399
+
         max_interval_s = (
             self._retry_policy.max_retry_interval.total_seconds()
             if self._retry_policy.max_retry_interval is not None
             else None
         )
+        max_delay_cap_s = (
+            min(max_interval_s, float(max_timedelta_seconds))
+            if max_interval_s is not None
+            else float(max_timedelta_seconds)
+        )
+        first_interval_s = self._retry_policy.first_retry_interval.total_seconds()
+
+        timeout_s = (
+            self._retry_policy.retry_timeout.total_seconds()
+            if self._retry_policy.retry_timeout is not None
+            and self._retry_policy.retry_timeout != datetime.max
+            else None
+        )
+
+        total_elapsed_seconds = 0.0
+        next_delay_f = 0.0
         for i in range(1, self._attempt_count + 1):
-            if (
-                max_interval_s is not None
-                and next_delay_f >= max_interval_s
-                and backoff_coefficient >= 1.0
-            ):
-                next_delay_f = max_interval_s
+            if next_delay_f >= max_delay_cap_s and backoff_coefficient >= 1.0:
+                next_delay_f = max_delay_cap_s
             else:
                 try:
-                    next_delay_f = (
-                        math.pow(backoff_coefficient, i - 1)
-                        * self._retry_policy.first_retry_interval.total_seconds()
-                    )
+                    next_delay_f = math.pow(backoff_coefficient, i - 1) * first_interval_s
                 except OverflowError:
-                    next_delay_f = max_interval_s if max_interval_s is not None else float('inf')
-            if max_interval_s is not None:
-                next_delay_f = min(next_delay_f, max_interval_s)
+                    next_delay_f = max_delay_cap_s
+            if next_delay_f > max_delay_cap_s:
+                next_delay_f = max_delay_cap_s
             total_elapsed_seconds += next_delay_f
 
-        logical_next_attempt_start = self._start_time + timedelta(seconds=total_elapsed_seconds)
-        if logical_next_attempt_start < retry_expiration:
-            return timedelta(seconds=next_delay_f)
+        if timeout_s is not None and total_elapsed_seconds >= timeout_s:
+            return None
 
-        return None
+        if next_delay_f >= max_timedelta_seconds:
+            return timedelta.max
+
+        return timedelta(seconds=next_delay_f)
 
 
 class TimerTask(CompletableTask[T]):

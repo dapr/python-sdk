@@ -73,13 +73,13 @@ def test_compute_next_delay_stops_at_bounded_attempts():
         first_retry_interval=timedelta(seconds=1),
         max_number_of_attempts=3,
     )
-    retryable = task.RetryableTask(
+    retryable: task.RetryableTask[object] = task.RetryableTask(
         retry_policy=policy,
         start_time=datetime.now(),
         is_sub_orch=False,
         task_name='dummy',
         encoded_input=None,
-        task_execution_id=1,
+        task_execution_id='1',
     )
 
     # Attempt 1: delay computed for attempt 2
@@ -102,13 +102,13 @@ def test_compute_next_delay_infinite_retries():
         max_number_of_attempts=-1,
         backoff_coefficient=1.0,
     )
-    retryable = task.RetryableTask(
+    retryable: task.RetryableTask[object] = task.RetryableTask(
         retry_policy=policy,
         start_time=datetime.now(),
         is_sub_orch=False,
         task_name='dummy',
         encoded_input=None,
-        task_execution_id=1,
+        task_execution_id='1',
     )
 
     # Verify that it continues returning delay across many attempts without stopping
@@ -124,13 +124,13 @@ def test_compute_next_delay_infinite_retry_respects_timeout():
         max_number_of_attempts=-1,
         retry_timeout=timedelta(seconds=5),
     )
-    retryable = task.RetryableTask(
+    retryable: task.RetryableTask[object] = task.RetryableTask(
         retry_policy=policy,
         start_time=datetime.now(),
         is_sub_orch=False,
         task_name='dummy',
         encoded_input=None,
-        task_execution_id=1,
+        task_execution_id='1',
     )
 
     # Attempt 1 (elapsed 2s <= 5s)
@@ -143,3 +143,27 @@ def test_compute_next_delay_infinite_retry_respects_timeout():
 
     # Attempt 3 (elapsed 6s > 5s timeout) -> should return None
     assert retryable.compute_next_delay() is None
+
+
+def test_compute_next_delay_infinite_retry_exponential_backoff_large_attempts():
+    policy = task.RetryPolicy(
+        first_retry_interval=timedelta(seconds=1),
+        max_number_of_attempts=-1,
+        backoff_coefficient=2.0,
+    )
+    retryable: task.RetryableTask[object] = task.RetryableTask(
+        retry_policy=policy,
+        start_time=datetime.now(),
+        is_sub_orch=False,
+        task_name='dummy',
+        encoded_input=None,
+        task_execution_id='1',
+    )
+
+    # Attempt 100 exceeds standard timedelta seconds bounds without max_retry_interval
+    retryable._attempt_count = 100
+    assert retryable.compute_next_delay() == timedelta.max
+
+    # Attempt 1100 triggers math.pow OverflowError
+    retryable._attempt_count = 1100
+    assert retryable.compute_next_delay() == timedelta.max
