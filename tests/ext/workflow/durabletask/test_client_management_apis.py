@@ -14,6 +14,8 @@
 
 from unittest.mock import AsyncMock, MagicMock, patch
 
+import json
+
 import pytest
 from google.protobuf import timestamp_pb2, wrappers_pb2
 
@@ -114,7 +116,7 @@ def test_terminate_preserves_reason_separately_from_output(reason, has_reason):
     )
 
     req = client._stub.TerminateInstance.call_args[0][0]
-    assert req.output.value == '{"result": "cancelled"}'
+    assert json.loads(req.output.value) == {'result': 'cancelled'}
     assert req.HasField('reason') is has_reason
     if has_reason:
         assert req.reason.value == reason
@@ -372,7 +374,7 @@ async def test_async_terminate_preserves_reason_separately_from_output(reason, h
     )
 
     req = stub.TerminateInstance.call_args[0][0]
-    assert req.output.value == '{"result": "cancelled"}'
+    assert json.loads(req.output.value) == {'result': 'cancelled'}
     assert req.HasField('reason') is has_reason
     if has_reason:
         assert req.reason.value == reason
