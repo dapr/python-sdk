@@ -21,6 +21,7 @@ from google.protobuf import timestamp_pb2, wrappers_pb2
 import dapr.ext.workflow._durabletask.internal.protos as pb
 from dapr.ext.workflow._durabletask.aio.client import AsyncTaskHubGrpcClient
 from dapr.ext.workflow._durabletask.client import _MAX_UINT32, TaskHubGrpcClient
+from dapr.ext.workflow.workflow_management import WorkflowHistoryEvent, WorkflowHistoryEventType
 
 
 def _sync_client() -> TaskHubGrpcClient:
@@ -119,6 +120,22 @@ def test_terminate_preserves_reason_separately_from_output(reason, has_reason):
     assert req.HasField('reason') is has_reason
     if has_reason:
         assert req.reason.value == reason
+
+
+@pytest.mark.parametrize(
+    ('reason', 'expected'),
+    [('operator requested', 'operator requested'), ('', ''), (None, None)],
+)
+def test_history_event_preserves_termination_reason_presence(reason, expected):
+    termination = pb.ExecutionTerminatedEvent()
+    if reason is not None:
+        termination.reason.CopyFrom(wrappers_pb2.StringValue(value=reason))
+    event = pb.HistoryEvent(executionTerminated=termination)
+
+    result = WorkflowHistoryEvent._from_proto(event)
+
+    assert result.event_type == WorkflowHistoryEventType.EXECUTION_TERMINATED
+    assert result.termination_reason == expected
 
 
 def test_workflow_state_preserves_termination_reason_presence():
