@@ -12,9 +12,8 @@
 
 """Engine-client coverage for the workflow management RPCs (list, history, rerun)."""
 
-from unittest.mock import AsyncMock, MagicMock, patch
-
 import json
+from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 from google.protobuf import timestamp_pb2, wrappers_pb2
