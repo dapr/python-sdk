@@ -101,6 +101,49 @@ def test_list_instance_ids_returns_the_raw_response():
     assert client.list_instance_ids() is expected
 
 
+@pytest.mark.parametrize(
+    ('reason', 'has_reason'),
+    [('operator requested', True), ('', True), (None, False)],
+)
+def test_terminate_preserves_reason_separately_from_output(reason, has_reason):
+    client = _sync_client()
+    client._stub.TerminateInstance.return_value = pb.TerminateResponse()
+
+    client.terminate_orchestration(
+        'instance1', output={'result': 'cancelled'}, reason=reason
+    )
+
+    req = client._stub.TerminateInstance.call_args[0][0]
+    assert req.output.value == '{"result": "cancelled"}'
+    assert req.HasField('reason') is has_reason
+    if has_reason:
+        assert req.reason.value == reason
+
+
+def test_workflow_state_preserves_termination_reason_presence():
+    state = pb.WorkflowState(
+        instanceId='instance1',
+        name='workflow',
+        terminationReason=wrappers_pb2.StringValue(value=''),
+    )
+    response = pb.GetInstanceResponse(exists=True, workflowState=state)
+
+    result = client.new_orchestration_state('instance1', response)
+
+    assert result.termination_reason == ''
+
+
+def test_workflow_state_omits_missing_termination_reason():
+    response = pb.GetInstanceResponse(
+        exists=True,
+        workflowState=pb.WorkflowState(instanceId='instance1', name='workflow'),
+    )
+
+    result = client.new_orchestration_state('instance1', response)
+
+    assert result.termination_reason is None
+
+
 def test_get_instance_history_unwraps_events():
     client = _sync_client()
     events = [pb.HistoryEvent(eventId=1), pb.HistoryEvent(eventId=2)]
