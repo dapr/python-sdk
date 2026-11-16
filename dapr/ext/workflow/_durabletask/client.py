@@ -100,7 +100,7 @@ class WorkflowState:
     serialized_output: Optional[str]
     serialized_custom_status: Optional[str]
     failure_details: Optional[task.FailureDetails]
-    termination_reason: Optional[str]
+    termination_reason: Optional[str] = None
 
     def raise_if_failed(self):
         if self.failure_details is not None:
