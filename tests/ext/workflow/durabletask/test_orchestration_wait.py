@@ -71,10 +71,10 @@ def test_wait_for_orchestration_completion_timeout(timeout):
         assert kwargs.get('timeout') == timeout
 
 
-def _make_rpc_error(code: grpc.StatusCode) -> grpc.RpcError:
+def _make_rpc_error(code: grpc.StatusCode, details: str | None = None) -> grpc.RpcError:
     err = grpc.RpcError()
     err.code = lambda: code  # type: ignore[method-assign]
-    err.details = lambda: f'simulated {code.name}'  # type: ignore[method-assign]
+    err.details = lambda: details or f'simulated {code.name}'  # type: ignore[method-assign]
     return err
 
 
@@ -187,6 +187,68 @@ def test_wait_for_orchestration_start_unbounded_transient_gives_up_with_rpc_erro
     # Retried at least once before giving up (proves it didn't fail-fast like the
     # non-transient path, and didn't loop forever).
     assert c._stub.WaitForInstanceStart.call_count >= 2
+
+
+def test_wait_for_orchestration_completion_retries_actor_closed_then_succeeds(monkeypatch):
+    """A deactivated workflow actor is transient: retry until it re-activates.
+
+    The sidecar reports this as UNKNOWN with 'actor is closed' details while the
+    workflow itself keeps executing (see dapr/dapr-agents#520).
+    """
+    instance_id = 'test-instance'
+
+    from dapr.ext.workflow._durabletask.internal.protos import (
+        ORCHESTRATION_STATUS_COMPLETED,
+        GetInstanceResponse,
+        WorkflowState,
+    )
+
+    response = GetInstanceResponse()
+    response.exists = True
+    state = WorkflowState()
+    state.instanceId = instance_id
+    state.workflowStatus = ORCHESTRATION_STATUS_COMPLETED
+    response.workflowState.CopyFrom(state)
+
+    sleeps = []
+    monkeypatch.setattr(
+        'dapr.ext.workflow._durabletask.client.time.sleep', lambda s: sleeps.append(s)
+    )
+
+    calls = {'n': 0}
+
+    def fake_call(*args, **kwargs):
+        calls['n'] += 1
+        if calls['n'] == 1:
+            raise _make_rpc_error(
+                grpc.StatusCode.UNKNOWN, 'actor is closed, cannot handle deactivated'
+            )
+        return response
+
+    c = TaskHubGrpcClient()
+    c._stub = Mock()
+    c._stub.WaitForInstanceCompletion.side_effect = fake_call
+
+    result = c.wait_for_orchestration_completion(instance_id, timeout=10)
+
+    assert result is not None
+    assert calls['n'] == 2
+    assert len(sleeps) == 1 and sleeps[0] > 0
+
+
+def test_wait_for_orchestration_completion_other_unknown_error_propagates(monkeypatch):
+    """Only the 'actor is closed' UNKNOWN error is transient; others propagate."""
+    monkeypatch.setattr('dapr.ext.workflow._durabletask.client.time.sleep', lambda s: None)
+
+    c = TaskHubGrpcClient()
+    c._stub = Mock()
+    c._stub.WaitForInstanceCompletion.side_effect = _make_rpc_error(
+        grpc.StatusCode.UNKNOWN, 'stream terminated unexpectedly'
+    )
+
+    with pytest.raises(grpc.RpcError):
+        c.wait_for_orchestration_completion('test-instance', timeout=10)
+    assert c._stub.WaitForInstanceCompletion.call_count == 1
 
 
 def test_cancelled_after_deadline_surfaces_as_timeout():
