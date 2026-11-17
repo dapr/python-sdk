@@ -55,6 +55,7 @@ class FakeTaskHubGrpcClient:
     def __init__(self):
         self.last_scheduled_workflow_name = None
         self.last_app_id = None
+        self.last_raised_error = None
 
     def _record_router(self, app_id):
         self.last_app_id = app_id
@@ -105,6 +106,10 @@ class FakeTaskHubGrpcClient:
     ):
         self._record_router(app_id)
         return mock_raise_event_result
+
+    def raise_orchestration_error(self, instance_id, event_name, error, *, app_id=None):
+        self._record_router(app_id)
+        self.last_raised_error = (instance_id, event_name, error)
 
     def terminate_orchestration(
         self,
@@ -374,6 +379,13 @@ class WorkflowClientTest(unittest.TestCase):
             )
             assert actual_raise_event_result == mock_raise_event_result
 
+            raised_error = RuntimeError()
+            self.assertIsNone(
+                wfClient.raise_workflow_error(
+                    instance_id=mock_instance_id, event_name='test_event', error=raised_error
+                )
+            )
+
             actual_terminate_result = wfClient.terminate_workflow(
                 instance_id=mock_instance_id, output='test_output'
             )
@@ -423,6 +435,11 @@ class WorkflowClientCrossAppTest(unittest.TestCase):
 
             wfClient.raise_workflow_event(
                 instance_id=mock_instance_id, event_name='test_event', **routing
+            )
+            self._assert_forwarded(fake_client)
+
+            wfClient.raise_workflow_error(
+                instance_id=mock_instance_id, event_name='test_event', error=RuntimeError(), **routing
             )
             self._assert_forwarded(fake_client)
 
