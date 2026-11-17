@@ -28,7 +28,12 @@ import time
 import pytest
 
 from dapr.ext.workflow import DaprWorkflowClient
-from tests.integration.apps.workflow_host import EVENT_NAME, WORKFLOW_NAME
+from tests.integration.apps.workflow_host import (
+    ERROR_EVENT_NAME,
+    ERROR_WORKFLOW_NAME,
+    EVENT_NAME,
+    WORKFLOW_NAME,
+)
 
 pytestmark = pytest.mark.dapr_head
 
@@ -169,6 +174,32 @@ def test_cross_app_raise_event_completes_and_purge_removes(caller_client, host_c
 
     caller_client.purge_workflow(instance_id, app_id=HOST_APP_ID)
     _wait_until_absent(host_client, instance_id)
+
+
+
+
+def test_cross_app_raise_error_fails_the_pending_wait(caller_client):
+    """RaiseError fails the oldest matching wait on the remote workflow."""
+    instance_id = caller_client.schedule_new_workflow(
+        workflow=ERROR_WORKFLOW_NAME, app_id=HOST_APP_ID
+    )
+    started = caller_client.wait_for_workflow_start(
+        instance_id, app_id=HOST_APP_ID, timeout_in_seconds=STATUS_TIMEOUT
+    )
+    assert started is not None
+
+    caller_client.raise_workflow_error(
+        instance_id, ERROR_EVENT_NAME, RuntimeError(), app_id=HOST_APP_ID
+    )
+    state = caller_client.wait_for_workflow_completion(
+        instance_id, app_id=HOST_APP_ID, timeout_in_seconds=STATUS_TIMEOUT
+    )
+
+    assert state is not None
+    assert state.runtime_status.name == 'FAILED'
+    assert state.failure_details is not None
+    assert state.failure_details.error_type == 'builtins.RuntimeError'
+    assert state.failure_details.message == ''
 
 
 def test_cross_app_terminate(caller_client):
