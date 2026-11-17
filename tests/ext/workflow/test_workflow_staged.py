@@ -57,6 +57,12 @@ class _StagingSidecar(stubs.TaskHubSidecarServiceServicer):
         self.requests['RaiseEvent'] = request
         return pb.RaiseEventResponse(staged=self.staged)
 
+    def RaiseError(  # noqa: N802
+        self, request: pb.RaiseEventRequest, context: grpc.ServicerContext
+    ) -> pb.RaiseEventResponse:
+        self.requests['RaiseError'] = request
+        return pb.RaiseEventResponse(staged=self.staged)
+
     def TerminateInstance(  # noqa: N802
         self, request: pb.TerminateRequest, context: grpc.ServicerContext
     ) -> pb.TerminateResponse:
@@ -119,6 +125,14 @@ class StagedOperationsTest(_SidecarTestMixin, unittest.TestCase):
                 )
                 self.assertEqual(WorkflowOperationResult(staged), raise_result)
 
+                error_result = self.wf_client.raise_workflow_error_with_result(
+                    INSTANCE_ID, 'approval', RuntimeError()
+                )
+                self.assertEqual(WorkflowOperationResult(staged), error_result)
+                failure = self.sidecar.requests['RaiseError'].failureDetails
+                self.assertEqual('builtins.RuntimeError', failure.errorType)
+                self.assertEqual('', failure.errorMessage)
+
                 terminate_result = self.wf_client.terminate_workflow_with_result(INSTANCE_ID)
                 self.assertEqual(WorkflowOperationResult(staged), terminate_result)
 
@@ -143,6 +157,15 @@ class StagedOperationsTest(_SidecarTestMixin, unittest.TestCase):
         )
         self.assertEqual(start_request, self.sidecar.requests['StartInstance'])
 
+        self.wf_client.raise_workflow_error_with_result(
+            INSTANCE_ID, 'approval', RuntimeError(), app_id=TARGET_APP_ID
+        )
+        raise_error_request = self.sidecar.requests['RaiseError']
+        self.wf_client.raise_workflow_error(
+            INSTANCE_ID, 'approval', RuntimeError(), app_id=TARGET_APP_ID
+        )
+        self.assertEqual(raise_error_request, self.sidecar.requests['RaiseError'])
+
         self.wf_client.terminate_workflow_with_result(
             INSTANCE_ID, output='done', recursive=False, app_id=TARGET_APP_ID
         )
@@ -164,6 +187,7 @@ class StagedOperationsTest(_SidecarTestMixin, unittest.TestCase):
         instance_id = self.wf_client.schedule_new_workflow('wf', instance_id=INSTANCE_ID)
         self.assertEqual(INSTANCE_ID, instance_id)
         self.assertIsNone(self.wf_client.raise_workflow_event(INSTANCE_ID, 'approval'))
+        self.assertIsNone(self.wf_client.raise_workflow_error(INSTANCE_ID, 'approval', RuntimeError()))
         self.assertIsNone(self.wf_client.terminate_workflow(INSTANCE_ID))
         self.assertIsNone(self.wf_client.pause_workflow(INSTANCE_ID))
         self.assertIsNone(self.wf_client.resume_workflow(INSTANCE_ID))
@@ -196,6 +220,14 @@ class AsyncStagedOperationsTest(_SidecarTestMixin, unittest.IsolatedAsyncioTestC
                 )
                 self.assertEqual(WorkflowOperationResult(staged), raise_result)
 
+                error_result = await self.wf_client.raise_workflow_error_with_result(
+                    INSTANCE_ID, 'approval', RuntimeError()
+                )
+                self.assertEqual(WorkflowOperationResult(staged), error_result)
+                failure = self.sidecar.requests['RaiseError'].failureDetails
+                self.assertEqual('builtins.RuntimeError', failure.errorType)
+                self.assertEqual('', failure.errorMessage)
+
                 terminate_result = await self.wf_client.terminate_workflow_with_result(INSTANCE_ID)
                 self.assertEqual(WorkflowOperationResult(staged), terminate_result)
 
@@ -216,6 +248,9 @@ class AsyncStagedOperationsTest(_SidecarTestMixin, unittest.IsolatedAsyncioTestC
         instance_id = await self.wf_client.schedule_new_workflow('wf', instance_id=INSTANCE_ID)
         self.assertEqual(INSTANCE_ID, instance_id)
         self.assertIsNone(await self.wf_client.raise_workflow_event(INSTANCE_ID, 'approval'))
+        self.assertIsNone(
+            await self.wf_client.raise_workflow_error(INSTANCE_ID, 'approval', RuntimeError())
+        )
         self.assertIsNone(await self.wf_client.terminate_workflow(INSTANCE_ID))
         self.assertIsNone(await self.wf_client.pause_workflow(INSTANCE_ID))
         self.assertIsNone(await self.wf_client.resume_workflow(INSTANCE_ID))
