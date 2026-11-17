@@ -56,6 +56,7 @@ class FakeAsyncTaskHubGrpcClient:
     def __init__(self):
         self.last_scheduled_workflow_name = None
         self.last_app_id = None
+        self.last_raised_error = None
 
     def _record_router(self, app_id):
         self.last_app_id = app_id
@@ -109,6 +110,10 @@ class FakeAsyncTaskHubGrpcClient:
     ):
         self._record_router(app_id)
         return mock_raise_event_result
+
+    async def raise_orchestration_error(self, instance_id, event_name, error, *, app_id=None):
+        self._record_router(app_id)
+        self.last_raised_error = (instance_id, event_name, error)
 
     async def terminate_orchestration(
         self,
@@ -372,6 +377,13 @@ class WorkflowClientAioTest(unittest.IsolatedAsyncioTestCase):
             )
             assert actual_raise_event_result == mock_raise_event_result
 
+            raised_error = RuntimeError()
+            self.assertIsNone(
+                await wfClient.raise_workflow_error(
+                    instance_id=mock_instance_id, event_name='test_event', error=raised_error
+                )
+            )
+
             actual_terminate_result = await wfClient.terminate_workflow(
                 instance_id=mock_instance_id, output='test_output'
             )
@@ -422,6 +434,11 @@ class WorkflowClientAioCrossAppTest(unittest.IsolatedAsyncioTestCase):
 
             await wfClient.raise_workflow_event(
                 instance_id=mock_instance_id, event_name='test_event', **routing
+            )
+            self._assert_forwarded(fake_client)
+
+            await wfClient.raise_workflow_error(
+                instance_id=mock_instance_id, event_name='test_event', error=RuntimeError(), **routing
             )
             self._assert_forwarded(fake_client)
 
