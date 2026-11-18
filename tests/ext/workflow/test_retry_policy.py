@@ -151,6 +151,41 @@ def test_compute_next_delay_infinite_retry_exponential_backoff_large_attempts():
         max_number_of_attempts=-1,
         backoff_coefficient=2.0,
     )
+    start = datetime(2026, 1, 1, 0, 0, 0)
+    retryable: task.RetryableTask[object] = task.RetryableTask(
+        retry_policy=policy,
+        start_time=start,
+        is_sub_orch=False,
+        task_name='dummy',
+        encoded_input=None,
+        task_execution_id='1',
+    )
+
+    # Attempt 100 exceeds standard timedelta seconds bounds without max_retry_interval
+    retryable._attempt_count = 100
+    delay100 = retryable.compute_next_delay()
+    assert delay100 is not None
+    # Verify the delay can be safely added to worker.current_utc_datetime without OverflowError
+    current_utc = start + timedelta(hours=1)
+    fire_at = current_utc + delay100
+    assert fire_at <= datetime.max
+
+    # Attempt 1100 triggers math.pow OverflowError, capped at the same safe datetime limit
+    retryable._attempt_count = 1100
+    delay1100 = retryable.compute_next_delay()
+    assert delay1100 == delay100
+    fire_at_1100 = current_utc + delay1100
+    assert fire_at_1100 <= datetime.max
+
+
+def test_compute_next_delay_infinite_retry_loop_break_optimization():
+    policy = task.RetryPolicy(
+        first_retry_interval=timedelta(seconds=1),
+        max_number_of_attempts=-1,
+        backoff_coefficient=2.0,
+        max_retry_interval=timedelta(seconds=16),
+        retry_timeout=timedelta(seconds=100),
+    )
     retryable: task.RetryableTask[object] = task.RetryableTask(
         retry_policy=policy,
         start_time=datetime.now(),
@@ -160,10 +195,14 @@ def test_compute_next_delay_infinite_retry_exponential_backoff_large_attempts():
         task_execution_id='1',
     )
 
-    # Attempt 100 exceeds standard timedelta seconds bounds without max_retry_interval
-    retryable._attempt_count = 100
-    assert retryable.compute_next_delay() == timedelta.max
+    # At attempt 5: intervals are 1, 2, 4, 8, 16. Total elapsed = 31s. Next delay = 16s.
+    retryable._attempt_count = 5
+    assert retryable.compute_next_delay() == timedelta(seconds=16)
 
-    # Attempt 1100 triggers math.pow OverflowError
-    retryable._attempt_count = 1100
-    assert retryable.compute_next_delay() == timedelta.max
+    # At attempt 9: intervals are 1, 2, 4, 8, 16, 16, 16, 16, 16. Total = 31 + 4*16 = 95s <= 100s.
+    retryable._attempt_count = 9
+    assert retryable.compute_next_delay() == timedelta(seconds=16)
+
+    # At attempt 10: total elapsed = 95 + 16 = 111s > 100s timeout -> None
+    retryable._attempt_count = 10
+    assert retryable.compute_next_delay() is None

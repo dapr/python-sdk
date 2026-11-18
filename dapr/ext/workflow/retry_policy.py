@@ -40,7 +40,8 @@ class RetryPolicy:
         Args:
             first_retry_interval(timedelta): The retry interval to use for the first retry attempt.
             max_number_of_attempts(int):  The maximum number of retry attempts. Use -1 for infinite
-                retries.
+                retries. When using -1, pairing with max_retry_interval or retry_timeout is
+                recommended as workflow execution history continues to grow with each attempt.
             backoff_coefficient(Optional[float]): The backoff coefficient to use for calculating
                 the next retry interval.
             max_retry_interval(Optional[timedelta]): The maximum retry interval to use for any
