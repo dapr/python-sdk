@@ -531,13 +531,10 @@ class TerminateRequest(_message.Message):
     OUTPUT_FIELD_NUMBER: _builtins.int
     RECURSIVE_FIELD_NUMBER: _builtins.int
     ROUTER_FIELD_NUMBER: _builtins.int
-    REASON_FIELD_NUMBER: _builtins.int
     instanceId: _builtins.str
     recursive: _builtins.bool
     @_builtins.property
     def output(self) -> _wrappers_pb2.StringValue: ...
-    @_builtins.property
-    def reason(self) -> _wrappers_pb2.StringValue: ...
     @_builtins.property
     def router(self) -> _orchestration_pb2.TaskRouter:
         """router optionally routes this operation to the workflow instance owned
@@ -551,11 +548,10 @@ class TerminateRequest(_message.Message):
         output: _wrappers_pb2.StringValue | None = ...,
         recursive: _builtins.bool = ...,
         router: _orchestration_pb2.TaskRouter | None = ...,
-        reason: _wrappers_pb2.StringValue | None = ...,
     ) -> None: ...
-    _HasFieldArgType: _TypeAlias = _typing.Literal["_router", b"_router", "output", b"output", "router", b"router", "reason", b"reason"]  # noqa: Y015
+    _HasFieldArgType: _TypeAlias = _typing.Literal["_router", b"_router", "output", b"output", "router", b"router"]  # noqa: Y015
     def HasField(self, field_name: _HasFieldArgType) -> _builtins.bool: ...
-    _ClearFieldArgType: _TypeAlias = _typing.Literal["_router", b"_router", "instanceId", b"instanceId", "output", b"output", "recursive", b"recursive", "router", b"router", "reason", b"reason"]  # noqa: Y015
+    _ClearFieldArgType: _TypeAlias = _typing.Literal["_router", b"_router", "instanceId", b"instanceId", "output", b"output", "recursive", b"recursive", "router", b"router"]  # noqa: Y015
     def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
     _WhichOneofReturnType__router: _TypeAlias = _typing.Literal["router"]  # noqa: Y015
     _WhichOneofArgType__router: _TypeAlias = _typing.Literal["_router", b"_router"]  # noqa: Y015
