@@ -221,9 +221,7 @@ class WorkflowHistoryEvent:
             sentinel value to test for.
         failure_details: The error, for the failure event types and for an
             EXECUTION_COMPLETED that completed a failed workflow.
-        termination_reason: The reason supplied for an EXECUTION_TERMINATED event.
-            None means the event did not carry a reason; an explicitly empty
-            reason is preserved as an empty string.
+        input: The input recorded for an EXECUTION_TERMINATED event.
     """
 
     event_id: int
@@ -232,7 +230,7 @@ class WorkflowHistoryEvent:
     name: Optional[str]
     task_scheduled_id: Optional[int]
     failure_details: Optional[FailureDetails]
-    termination_reason: Optional[str] = None
+    input: Optional[str] = None
 
     @property
     def is_rerunnable(self) -> bool:
@@ -259,11 +257,11 @@ class WorkflowHistoryEvent:
             name=getattr(payload, 'name', '') or None,
             task_scheduled_id=getattr(payload, 'taskScheduledId', None),
             failure_details=_failure_details_of(payload),
-            termination_reason=(
-                payload.reason.value
+            input=(
+                payload.input.value
                 if (
                     payload_field == WorkflowHistoryEventType.EXECUTION_TERMINATED.value
-                    and payload.HasField('reason')
+                    and payload.HasField('input')
                 )
                 else None
             ),
