@@ -273,6 +273,7 @@ class AsyncTaskHubGrpcClient:
     # unbounded (timeout=0) callers so a down sidecar surfaces the original
     # error instead of retrying forever.
     _MAX_TRANSIENT_RETRY_SECONDS = 30.0
+    _MAX_CONSECUTIVE_TRANSIENT_RESETS = 3
 
     async def _call_with_transient_retry(self, instance_id, timeout, call_fn):
         """Async mirror of TaskHubGrpcClient._call_with_transient_retry.
@@ -289,8 +290,9 @@ class AsyncTaskHubGrpcClient:
         grpc_timeout = None if unbounded else timeout
         backoff = 0.5
         transient_deadline = None  # unbounded mode only; anchored on first transient
+        consecutive_resets = 0
         while True:
-            call_start = time.perf_counter()
+            call_start = time.monotonic()
             try:
                 return await call_fn(grpc_timeout)
             except grpc.RpcError as rpc_error:
@@ -312,18 +314,32 @@ class AsyncTaskHubGrpcClient:
                     raise
 
                 now = time.monotonic()
-                call_duration = time.perf_counter() - call_start
+                call_duration = now - call_start
 
                 # In unbounded mode the user budget can't end the loop, so cap
                 # continuous transient retries and re-raise the original error
                 # (matching pre-retry behavior) once the grace window elapses.
                 # If a re-issued wait was healthy and in-flight (held by daprd)
                 # before being cancelled by a new restart, restart the grace
-                # window and reset backoff rather than anchoring on the first error.
+                # window and reset backoff rather than anchoring on the first error,
+                # up to _MAX_CONSECUTIVE_TRANSIENT_RESETS times to avoid infinite retry loops.
                 if unbounded:
                     if code == grpc.StatusCode.CANCELLED and call_duration >= 1.0:
-                        transient_deadline = None
-                        backoff = 0.5
+                        if consecutive_resets < self._MAX_CONSECUTIVE_TRANSIENT_RESETS:
+                            consecutive_resets += 1
+                            transient_deadline = None
+                            backoff = 0.5
+                            self._logger.warning(
+                                f"In-flight wait for instance '{instance_id}' was cancelled by server after "
+                                f'{call_duration:.1f}s; resetting transient retry grace window '
+                                f'({consecutive_resets}/{self._MAX_CONSECUTIVE_TRANSIENT_RESETS}).'
+                            )
+                        else:
+                            self._logger.warning(
+                                f"In-flight wait for instance '{instance_id}' reached maximum "
+                                f'consecutive grace window resets ({self._MAX_CONSECUTIVE_TRANSIENT_RESETS}); '
+                                f'transient retry window will not be extended further.'
+                            )
 
                     if transient_deadline is None:
                         transient_deadline = now + self._MAX_TRANSIENT_RETRY_SECONDS

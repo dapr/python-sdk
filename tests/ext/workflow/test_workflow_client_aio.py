@@ -446,3 +446,24 @@ class WorkflowClientAioCrossAppTest(unittest.IsolatedAsyncioTestCase):
             wfClient = DaprWorkflowClient()
             await wfClient.terminate_workflow(instance_id=mock_instance_id)
             assert fake_client.last_app_id is None
+
+
+class WorkflowClientAioLifecycleTest(unittest.IsolatedAsyncioTestCase):
+    async def test_async_with_context_manager_closes_client(self):
+        wf_client = DaprWorkflowClient()
+        self.assertFalse(wf_client.is_closed)
+        async with wf_client as client:
+            self.assertIs(client, wf_client)
+            self.assertFalse(client.is_closed)
+        self.assertTrue(wf_client.is_closed)
+
+    async def test_aclose_and_close_methods(self):
+        wf_client = DaprWorkflowClient()
+        self.assertFalse(wf_client.is_closed)
+        await wf_client.aclose()
+        self.assertTrue(wf_client.is_closed)
+
+        wf_client2 = DaprWorkflowClient()
+        self.assertFalse(wf_client2.is_closed)
+        await wf_client2.close()
+        self.assertTrue(wf_client2.is_closed)

@@ -351,21 +351,14 @@ async def test_unbounded_wait_retries_across_multiple_sidecar_restarts(monkeypat
     response.workflowState.CopyFrom(state)
 
     fake_time = [0.0]
-    fake_perf = [0.0]
 
     def fake_monotonic():
         return fake_time[0]
-
-    def fake_perf_counter():
-        return fake_perf[0]
 
     async def fake_sleep(s):
         pass
 
     monkeypatch.setattr('dapr.ext.workflow._durabletask.aio.client.time.monotonic', fake_monotonic)
-    monkeypatch.setattr(
-        'dapr.ext.workflow._durabletask.aio.client.time.perf_counter', fake_perf_counter
-    )
     monkeypatch.setattr('asyncio.sleep', fake_sleep)
 
     calls = {'n': 0}
@@ -374,14 +367,11 @@ async def test_unbounded_wait_retries_across_multiple_sidecar_restarts(monkeypat
         calls['n'] += 1
         if calls['n'] == 1:
             fake_time[0] += 10.0
-            fake_perf[0] += 10.0
             raise _make_async_rpc_error(grpc.StatusCode.CANCELLED)
         if calls['n'] == 2:
             fake_time[0] += 60.0
-            fake_perf[0] += 60.0
             raise _make_async_rpc_error(grpc.StatusCode.CANCELLED)
         fake_time[0] += 5.0
-        fake_perf[0] += 5.0
         return response
 
     client = AsyncTaskHubGrpcClient()
@@ -392,6 +382,41 @@ async def test_unbounded_wait_retries_across_multiple_sidecar_restarts(monkeypat
     assert res is not None
     assert res.runtime_status == OrchestrationStatus.COMPLETED
     assert calls['n'] == 3
+
+
+async def test_unbounded_wait_async_caps_consecutive_in_flight_cancellations(monkeypatch):
+    """When every async wait attempt is CANCELLED after >= 1s, the client caps consecutive
+    window resets (_MAX_CONSECUTIVE_TRANSIENT_RESETS) and eventually propagates
+    the CANCELLED RpcError rather than looping forever."""
+    instance_id = 'test-instance'
+
+    fake_time = [0.0]
+
+    def fake_monotonic():
+        return fake_time[0]
+
+    async def fake_sleep(s):
+        pass
+
+    monkeypatch.setattr('dapr.ext.workflow._durabletask.aio.client.time.monotonic', fake_monotonic)
+    monkeypatch.setattr('asyncio.sleep', fake_sleep)
+
+    calls = {'n': 0}
+
+    async def fake_call(*args, **kwargs):
+        calls['n'] += 1
+        fake_time[0] += 5.0  # >= 1.0s in-flight before server cancellation
+        raise _make_async_rpc_error(grpc.StatusCode.CANCELLED)
+
+    client = AsyncTaskHubGrpcClient()
+    client._stub = Mock()
+    client._stub.WaitForInstanceCompletion = fake_call
+
+    with pytest.raises(grpc.RpcError) as exc_info:
+        await client.wait_for_orchestration_completion(instance_id, timeout=0)
+
+    assert exc_info.value.code() == grpc.StatusCode.CANCELLED
+    assert calls['n'] > AsyncTaskHubGrpcClient._MAX_CONSECUTIVE_TRANSIENT_RESETS
 
 
 async def test_async_client_aclose_sets_is_closed():

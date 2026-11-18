@@ -345,18 +345,11 @@ def test_unbounded_wait_retries_across_multiple_sidecar_restarts(monkeypatch):
     response.workflowState.CopyFrom(state)
 
     fake_time = [0.0]
-    fake_perf = [0.0]
 
     def fake_monotonic():
         return fake_time[0]
 
-    def fake_perf_counter():
-        return fake_perf[0]
-
     monkeypatch.setattr('dapr.ext.workflow._durabletask.client.time.monotonic', fake_monotonic)
-    monkeypatch.setattr(
-        'dapr.ext.workflow._durabletask.client.time.perf_counter', fake_perf_counter
-    )
     monkeypatch.setattr('dapr.ext.workflow._durabletask.client.time.sleep', lambda s: None)
 
     calls = {'n': 0}
@@ -365,14 +358,11 @@ def test_unbounded_wait_retries_across_multiple_sidecar_restarts(monkeypatch):
         calls['n'] += 1
         if calls['n'] == 1:
             fake_time[0] += 10.0  # waited 10s before first restart
-            fake_perf[0] += 10.0
             raise _make_rpc_error(grpc.StatusCode.CANCELLED)
         if calls['n'] == 2:
             fake_time[0] += 60.0  # in-flight wait for 60s before second restart
-            fake_perf[0] += 60.0
             raise _make_rpc_error(grpc.StatusCode.CANCELLED)
         fake_time[0] += 5.0
-        fake_perf[0] += 5.0
         return response
 
     c = TaskHubGrpcClient()
@@ -383,6 +373,39 @@ def test_unbounded_wait_retries_across_multiple_sidecar_restarts(monkeypatch):
     assert res is not None
     assert res.runtime_status == OrchestrationStatus.COMPLETED
     assert calls['n'] == 3
+
+
+def test_unbounded_wait_caps_consecutive_in_flight_cancellations(monkeypatch):
+    """When every wait attempt is CANCELLED after >= 1s, the client caps consecutive
+    window resets (_MAX_CONSECUTIVE_TRANSIENT_RESETS) and eventually propagates
+    the CANCELLED RpcError rather than looping forever."""
+    instance_id = 'test-instance'
+
+    fake_time = [0.0]
+
+    def fake_monotonic():
+        return fake_time[0]
+
+    monkeypatch.setattr('dapr.ext.workflow._durabletask.client.time.monotonic', fake_monotonic)
+    monkeypatch.setattr('dapr.ext.workflow._durabletask.client.time.sleep', lambda s: None)
+
+    calls = {'n': 0}
+
+    def fake_call(*args, **kwargs):
+        calls['n'] += 1
+        fake_time[0] += 5.0  # >= 1.0s in-flight before server cancellation
+        raise _make_rpc_error(grpc.StatusCode.CANCELLED)
+
+    c = TaskHubGrpcClient()
+    c._stub = Mock()
+    c._stub.WaitForInstanceCompletion.side_effect = fake_call
+
+    with pytest.raises(grpc.RpcError) as exc_info:
+        c.wait_for_orchestration_completion(instance_id, timeout=0)
+
+    assert exc_info.value.code() == grpc.StatusCode.CANCELLED
+    # Must have attempted beyond the max reset limit before exhausting the 30s window
+    assert calls['n'] > TaskHubGrpcClient._MAX_CONSECUTIVE_TRANSIENT_RESETS
 
 
 def test_client_close_sets_is_closed():

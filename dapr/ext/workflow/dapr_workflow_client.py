@@ -810,3 +810,10 @@ class DaprWorkflowClient:
     def close(self):
         """Closes the gRPC connection used by the client."""
         return self.__obj.close()
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        self.close()
+        return False
