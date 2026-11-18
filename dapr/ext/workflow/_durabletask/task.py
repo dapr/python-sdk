@@ -532,44 +532,78 @@ class RetryableTask(CompletableTask[T]):
         self._attempt_count += 1
 
     def compute_next_delay(self) -> Optional[timedelta]:
-        if self._attempt_count >= self._retry_policy.max_number_of_attempts:
-            return None
-
-        retry_expiration: datetime = datetime.max
         if (
-            self._retry_policy.retry_timeout is not None
-            and self._retry_policy.retry_timeout != datetime.max
+            self._retry_policy.max_number_of_attempts != -1
+            and self._attempt_count >= self._retry_policy.max_number_of_attempts
         ):
-            retry_expiration = self._start_time + self._retry_policy.retry_timeout
+            return None
 
         if self._retry_policy.backoff_coefficient is None:
             backoff_coefficient = 1.0
         else:
             backoff_coefficient = self._retry_policy.backoff_coefficient
 
-        # Compute the next delay and the logical start time of the next attempt
-        # deterministically from accumulated delays, avoiding non-determinism during replay.
-        # range(1, attempt_count + 1) sums all delays up to and including the one about to
-        # be taken, so we're checking whether attempt N+1 would start within the timeout.
+        # Determine the maximum safe delay that can be added to worker.current_utc_datetime
+        # without raising OverflowError: date value out of range (datetime.max is year 9999).
+        # We leave a small margin (e.g. 1 day) so current_utc_datetime (which may be slightly
+        # ahead of start_time) + delay never exceeds datetime.max.
+        start_naive = (
+            self._start_time.replace(tzinfo=None)
+            if self._start_time.tzinfo is not None
+            else self._start_time
+        )
+        max_safe_delay = max(timedelta(0), (datetime.max - start_naive) - timedelta(days=1))
+        max_safe_delay_s = max_safe_delay.total_seconds()
+
+        max_interval_s = (
+            self._retry_policy.max_retry_interval.total_seconds()
+            if self._retry_policy.max_retry_interval is not None
+            else None
+        )
+        max_delay_cap_s = (
+            min(max_interval_s, max_safe_delay_s)
+            if max_interval_s is not None
+            else max_safe_delay_s
+        )
+        first_interval_s = self._retry_policy.first_retry_interval.total_seconds()
+
+        timeout_s = (
+            self._retry_policy.retry_timeout.total_seconds()
+            if self._retry_policy.retry_timeout is not None
+            and self._retry_policy.retry_timeout != datetime.max
+            else None
+        )
+
+        # Compute the next delay and total elapsed time deterministically by summing
+        # scheduled retry delays rather than consulting the wall clock, ensuring
+        # reproducible behavior during workflow replay.
         total_elapsed_seconds = 0.0
         next_delay_f = 0.0
         for i in range(1, self._attempt_count + 1):
-            next_delay_f = (
-                math.pow(backoff_coefficient, i - 1)
-                * self._retry_policy.first_retry_interval.total_seconds()
-            )
-            if self._retry_policy.max_retry_interval is not None:
-                next_delay_f = min(
-                    next_delay_f,
-                    self._retry_policy.max_retry_interval.total_seconds(),
-                )
+            try:
+                next_delay_f = math.pow(backoff_coefficient, i - 1) * first_interval_s
+            except OverflowError:
+                next_delay_f = max_delay_cap_s
+
+            if next_delay_f >= max_delay_cap_s:
+                next_delay_f = max_delay_cap_s
+                if backoff_coefficient >= 1.0:
+                    # Once the cap is reached with a non-decreasing backoff coefficient, all
+                    # remaining attempts (attempt_count - i + 1) will also equal max_delay_cap_s.
+                    # Break early to avoid O(attempt_count) iteration per failure during replay.
+                    remaining_attempts = self._attempt_count - i + 1
+                    total_elapsed_seconds += max_delay_cap_s * remaining_attempts
+                    break
+
             total_elapsed_seconds += next_delay_f
 
-        logical_next_attempt_start = self._start_time + timedelta(seconds=total_elapsed_seconds)
-        if logical_next_attempt_start < retry_expiration:
-            return timedelta(seconds=next_delay_f)
+        if timeout_s is not None and total_elapsed_seconds >= timeout_s:
+            return None
 
-        return None
+        if next_delay_f >= max_safe_delay_s:
+            return max_safe_delay
+
+        return timedelta(seconds=next_delay_f)
 
 
 class TimerTask(CompletableTask[T]):
@@ -747,7 +781,9 @@ class RetryPolicy:
         first_retry_interval : timedelta
             The retry interval to use for the first retry attempt.
         max_number_of_attempts : int
-            The maximum number of retry attempts.
+            The maximum number of retry attempts. Use -1 for infinite retries.
+            When using -1, pairing with max_retry_interval or retry_timeout is
+            recommended as workflow execution history continues to grow with each attempt.
         backoff_coefficient : Optional[float]
             The backoff coefficient to use for calculating the next retry interval.
         max_retry_interval : Optional[timedelta]
@@ -763,8 +799,8 @@ class RetryPolicy:
         # validate inputs
         if first_retry_interval < timedelta(seconds=0):
             raise ValueError('first_retry_interval must be >= 0')
-        if max_number_of_attempts < 1:
-            raise ValueError('max_number_of_attempts must be >= 1')
+        if max_number_of_attempts < 1 and max_number_of_attempts != -1:
+            raise ValueError('max_number_of_attempts must be >= 1 or -1 for infinite retries')
         if backoff_coefficient is not None and backoff_coefficient < 1:
             raise ValueError('backoff_coefficient must be >= 1')
         if max_retry_interval is not None and max_retry_interval < timedelta(seconds=0):
