@@ -56,7 +56,6 @@ class FakeAsyncTaskHubGrpcClient:
     def __init__(self):
         self.last_scheduled_workflow_name = None
         self.last_app_id = None
-        self.last_termination_reason = None
         self.last_termination_output = None
 
     def _record_router(self, app_id):
@@ -122,8 +121,9 @@ class FakeAsyncTaskHubGrpcClient:
         reason=None,
     ):
         self._record_router(app_id)
-        self.last_termination_reason = reason
-        self.last_termination_output = output
+        if output is not None and reason is not None:
+            raise ValueError('output and reason cannot be supplied together')
+        self.last_termination_output = reason if reason is not None else output
         return mock_terminate_result
 
     async def suspend_orchestration(self, instance_id: str, *, app_id=None):
@@ -432,13 +432,11 @@ class WorkflowClientAioCrossAppTest(unittest.IsolatedAsyncioTestCase):
 
             await wfClient.terminate_workflow(
                 instance_id=mock_instance_id,
-                output={'result': 'cancelled'},
                 reason='operator requested',
                 **routing,
             )
             self._assert_forwarded(fake_client)
-            assert fake_client.last_termination_output == {'result': 'cancelled'}
-            assert fake_client.last_termination_reason == 'operator requested'
+            assert fake_client.last_termination_output == 'operator requested'
 
             await wfClient.pause_workflow(instance_id=mock_instance_id, **routing)
             self._assert_forwarded(fake_client)
