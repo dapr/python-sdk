@@ -399,24 +399,37 @@ def test_history_timestamps_survive_the_round_trip():
 
 
 @pytest.mark.asyncio
-@pytest.mark.parametrize(
-    ('reason', 'has_reason'),
-    [('operator requested', True), ('', True), (None, False)],
-)
-async def test_async_terminate_preserves_reason_separately_from_output(reason, has_reason):
+async def test_async_terminate_uses_existing_input_for_reason():
     client = _async_client()
     stub = client._get_stub()
     stub.TerminateInstance = AsyncMock(return_value=pb.TerminateResponse())
 
-    await client.terminate_orchestration(
-        'instance1', output={'result': 'cancelled'}, reason=reason
-    )
+    await client.terminate_orchestration('instance1', reason='operator requested')
+
+    req = stub.TerminateInstance.call_args[0][0]
+    assert req.output.value == 'operator requested'
+
+
+@pytest.mark.asyncio
+async def test_async_terminate_preserves_existing_output_without_reason():
+    client = _async_client()
+    stub = client._get_stub()
+    stub.TerminateInstance = AsyncMock(return_value=pb.TerminateResponse())
+
+    await client.terminate_orchestration('instance1', output={'result': 'cancelled'})
 
     req = stub.TerminateInstance.call_args[0][0]
     assert json.loads(req.output.value) == {'result': 'cancelled'}
-    assert req.HasField('reason') is has_reason
-    if has_reason:
-        assert req.reason.value == reason
+
+
+@pytest.mark.asyncio
+async def test_async_terminate_rejects_reason_and_output_together():
+    client = _async_client()
+
+    with pytest.raises(ValueError, match='output and reason cannot be supplied together'):
+        await client.terminate_orchestration(
+            'instance1', output={'result': 'cancelled'}, reason='operator requested'
+        )
 
 
 @pytest.mark.asyncio
