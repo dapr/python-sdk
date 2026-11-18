@@ -129,6 +129,17 @@ class OrchestrationFailedError(Exception):
         return self._failure_details
 
 
+def _termination_input(output: Optional[Any], reason: Optional[str]):
+    if output is not None and reason is not None:
+        raise ValueError("output and reason cannot be supplied together")
+
+    if reason is not None:
+        return wrappers_pb2.StringValue(value=reason)
+    if output is not None:
+        return wrappers_pb2.StringValue(value=shared.to_json(output))
+    return None
+
+
 def new_orchestration_state(
     instance_id: str, res: pb.GetInstanceResponse
 ) -> Optional[WorkflowState]:
@@ -155,7 +166,7 @@ def new_orchestration_state(
         state.lastUpdatedTimestamp.ToDatetime(),
         state.input.value if not helpers.is_empty(state.input) else None,
         state.output.value if not helpers.is_empty(state.output) else None,
-        state.customStatus.value if not helpers.is_empty(state.customStatus) else None,
+        state.customStatus.value if state.HasField("customStatus") else None,
         failure_details,
     )
 
@@ -576,9 +587,10 @@ class TaskHubGrpcClient:
         output: Optional[Any] = None,
         recursive: bool = True,
         app_id: Optional[str] = None,
+        reason: Optional[str] = None,
     ):
         self.terminate_orchestration_with_result(
-            instance_id, output=output, recursive=recursive, app_id=app_id
+            instance_id, output=output, recursive=recursive, app_id=app_id, reason=reason
         )
 
     def terminate_orchestration_with_result(
@@ -588,11 +600,12 @@ class TaskHubGrpcClient:
         output: Optional[Any] = None,
         recursive: bool = True,
         app_id: Optional[str] = None,
+        reason: Optional[str] = None,
     ) -> pb.TerminateResponse:
         """Like terminate_orchestration, but returns the sidecar's response."""
         req = pb.TerminateRequest(
             instanceId=instance_id,
-            output=wrappers_pb2.StringValue(value=shared.to_json(output)) if output else None,
+            output=_termination_input(output, reason),
             recursive=recursive,
             router=new_task_router(app_id),
         )

@@ -412,6 +412,7 @@ class DaprWorkflowClient:
         output: Optional[Any] = None,
         recursive: bool = True,
         app_id: Optional[str] = None,
+        reason: Optional[str] = None,
     ) -> None:
         """Terminates a running workflow instance and updates its runtime status to
            WorkflowRuntimeStatus.Terminated This method internally enqueues a "terminate" message in
@@ -431,6 +432,7 @@ class DaprWorkflowClient:
             instance_id: The ID of the workflow instance to terminate.
             output: The optional output to set for the terminated workflow instance.
             recursive: The optional flag to terminate all child workflows.
+            reason: Optional termination input exposed as custom status. It cannot be combined with output.
             app_id: The optional ID of the app hosting the workflow instance, when it is
             hosted by a different app. The target app's WorkflowAccessPolicy governs whether
             this operation is permitted.
@@ -443,6 +445,7 @@ class DaprWorkflowClient:
             output=output,
             recursive=recursive,
             app_id=app_id,
+            reason=reason,
         )
 
     async def terminate_workflow_with_result(
@@ -452,6 +455,7 @@ class DaprWorkflowClient:
         output: Optional[Any] = None,
         recursive: bool = True,
         app_id: Optional[str] = None,
+        reason: Optional[str] = None,
     ) -> WorkflowOperationResult:
         """Terminates a workflow instance, and reports whether the sidecar staged it.
 
@@ -467,12 +471,13 @@ class DaprWorkflowClient:
             recursive: The optional flag to terminate all child workflows.
             app_id: The optional ID of the app hosting the workflow instance, when it is
             hosted by a different app. See terminate_workflow.
+            reason: Optional termination input exposed as custom status. It cannot be combined with output.
 
         Returns:
             Whether the sidecar staged the operation.
         """
         res = await self.__obj.terminate_orchestration_with_result(
-            instance_id, output=output, recursive=recursive, app_id=app_id
+            instance_id, output=output, recursive=recursive, app_id=app_id, reason=reason
         )
         return WorkflowOperationResult(staged=res.staged)
 
