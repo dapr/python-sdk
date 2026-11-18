@@ -72,7 +72,6 @@ class WorkflowState:
             'serialized_input': self.__obj.serialized_input,
             'serialized_output': self.__obj.serialized_output,
             'serialized_custom_status': self.__obj.serialized_custom_status,
-            'termination_reason': self.__obj.termination_reason,
         }
         if self.__obj.failure_details is not None:
             state_dict['failure_details'] = {
