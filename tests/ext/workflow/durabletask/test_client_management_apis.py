@@ -103,55 +103,78 @@ def test_list_instance_ids_returns_the_raw_response():
     assert client.list_instance_ids() is expected
 
 
-@pytest.mark.parametrize(
-    ('reason', 'has_reason'),
-    [('operator requested', True), ('', True), (None, False)],
-)
-def test_terminate_preserves_reason_separately_from_output(reason, has_reason):
+def test_terminate_uses_existing_input_for_reason():
     client = _sync_client()
     client._stub.TerminateInstance.return_value = pb.TerminateResponse()
 
-    client.terminate_orchestration(
-        'instance1', output={'result': 'cancelled'}, reason=reason
-    )
+    client.terminate_orchestration('instance1', reason='operator requested')
+
+    req = client._stub.TerminateInstance.call_args[0][0]
+    assert req.output.value == 'operator requested'
+
+
+def test_terminate_preserves_existing_output_without_reason():
+    client = _sync_client()
+    client._stub.TerminateInstance.return_value = pb.TerminateResponse()
+
+    client.terminate_orchestration('instance1', output={'result': 'cancelled'})
 
     req = client._stub.TerminateInstance.call_args[0][0]
     assert json.loads(req.output.value) == {'result': 'cancelled'}
-    assert req.HasField('reason') is has_reason
-    if has_reason:
-        assert req.reason.value == reason
+
+
+def test_terminate_rejects_reason_and_output_together():
+    client = _sync_client()
+
+    with pytest.raises(ValueError, match='output and reason cannot be supplied together'):
+        client.terminate_orchestration(
+            'instance1', output={'result': 'cancelled'}, reason='operator requested'
+        )
 
 
 @pytest.mark.parametrize(
     ('reason', 'expected'),
     [('operator requested', 'operator requested'), ('', ''), (None, None)],
 )
-def test_history_event_preserves_termination_reason_presence(reason, expected):
+def test_history_event_reads_termination_input(reason, expected):
     termination = pb.ExecutionTerminatedEvent()
     if reason is not None:
-        termination.reason.CopyFrom(wrappers_pb2.StringValue(value=reason))
+        termination.input.CopyFrom(wrappers_pb2.StringValue(value=reason))
     event = pb.HistoryEvent(executionTerminated=termination)
 
     result = WorkflowHistoryEvent._from_proto(event)
 
     assert result.event_type == WorkflowHistoryEventType.EXECUTION_TERMINATED
-    assert result.termination_reason == expected
+    assert result.input == expected
 
 
-def test_workflow_state_preserves_termination_reason_presence():
+def test_workflow_state_exposes_termination_reason_as_custom_status():
     state = pb.WorkflowState(
         instanceId='instance1',
         name='workflow',
-        terminationReason=wrappers_pb2.StringValue(value=''),
+        customStatus=wrappers_pb2.StringValue(value='operator requested'),
     )
     response = pb.GetInstanceResponse(exists=True, workflowState=state)
 
     result = client.new_orchestration_state('instance1', response)
 
-    assert result.termination_reason == ''
+    assert result.serialized_custom_status == 'operator requested'
 
 
-def test_workflow_state_omits_missing_termination_reason():
+def test_workflow_state_preserves_explicitly_empty_custom_status():
+    state = pb.WorkflowState(
+        instanceId='instance1',
+        name='workflow',
+        customStatus=wrappers_pb2.StringValue(value=''),
+    )
+    response = pb.GetInstanceResponse(exists=True, workflowState=state)
+
+    result = client.new_orchestration_state('instance1', response)
+
+    assert result.serialized_custom_status == ''
+
+
+def test_workflow_state_omits_missing_custom_status():
     response = pb.GetInstanceResponse(
         exists=True,
         workflowState=pb.WorkflowState(instanceId='instance1', name='workflow'),
@@ -159,7 +182,7 @@ def test_workflow_state_omits_missing_termination_reason():
 
     result = client.new_orchestration_state('instance1', response)
 
-    assert result.termination_reason is None
+    assert result.serialized_custom_status is None
 
 
 def test_get_instance_history_unwraps_events():
