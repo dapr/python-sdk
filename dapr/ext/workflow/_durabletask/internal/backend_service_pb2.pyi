@@ -336,7 +336,6 @@ class WorkflowMetadata(_message.Message):
     VERSION_FIELD_NUMBER: _builtins.int
     PARENTAPPID_FIELD_NUMBER: _builtins.int
     STARTEDAT_FIELD_NUMBER: _builtins.int
-    TERMINATIONREASON_FIELD_NUMBER: _builtins.int
     instanceId: _builtins.str
     name: _builtins.str
     runtimeStatus: _orchestration_pb2.OrchestrationStatus.ValueType
@@ -361,8 +360,6 @@ class WorkflowMetadata(_message.Message):
     def parentAppId(self) -> _wrappers_pb2.StringValue: ...
     @_builtins.property
     def startedAt(self) -> _timestamp_pb2.Timestamp: ...
-    @_builtins.property
-    def terminationReason(self) -> _wrappers_pb2.StringValue: ...
     def __init__(
         self,
         *,
@@ -380,11 +377,10 @@ class WorkflowMetadata(_message.Message):
         version: _wrappers_pb2.StringValue | None = ...,
         parentAppId: _wrappers_pb2.StringValue | None = ...,
         startedAt: _timestamp_pb2.Timestamp | None = ...,
-        terminationReason: _wrappers_pb2.StringValue | None = ...,
     ) -> None: ...
-    _HasFieldArgType: _TypeAlias = _typing.Literal["_parentAppId", b"_parentAppId", "_startedAt", b"_startedAt", "_version", b"_version", "completedAt", b"completedAt", "createdAt", b"createdAt", "customStatus", b"customStatus", "failureDetails", b"failureDetails", "input", b"input", "lastUpdatedAt", b"lastUpdatedAt", "output", b"output", "parentAppId", b"parentAppId", "startedAt", b"startedAt", "terminationReason", b"terminationReason", "version", b"version"]  # noqa: Y015
+    _HasFieldArgType: _TypeAlias = _typing.Literal["_parentAppId", b"_parentAppId", "_startedAt", b"_startedAt", "_version", b"_version", "completedAt", b"completedAt", "createdAt", b"createdAt", "customStatus", b"customStatus", "failureDetails", b"failureDetails", "input", b"input", "lastUpdatedAt", b"lastUpdatedAt", "output", b"output", "parentAppId", b"parentAppId", "startedAt", b"startedAt", "version", b"version"]  # noqa: Y015
     def HasField(self, field_name: _HasFieldArgType) -> _builtins.bool: ...
-    _ClearFieldArgType: _TypeAlias = _typing.Literal["_parentAppId", b"_parentAppId", "_startedAt", b"_startedAt", "_version", b"_version", "completedAt", b"completedAt", "createdAt", b"createdAt", "customStatus", b"customStatus", "failureDetails", b"failureDetails", "input", b"input", "instanceId", b"instanceId", "lastUpdatedAt", b"lastUpdatedAt", "name", b"name", "output", b"output", "parentAppId", b"parentAppId", "parentInstanceId", b"parentInstanceId", "runtimeStatus", b"runtimeStatus", "startedAt", b"startedAt", "terminationReason", b"terminationReason", "version", b"version"]  # noqa: Y015
+    _ClearFieldArgType: _TypeAlias = _typing.Literal["_parentAppId", b"_parentAppId", "_startedAt", b"_startedAt", "_version", b"_version", "completedAt", b"completedAt", "createdAt", b"createdAt", "customStatus", b"customStatus", "failureDetails", b"failureDetails", "input", b"input", "instanceId", b"instanceId", "lastUpdatedAt", b"lastUpdatedAt", "name", b"name", "output", b"output", "parentAppId", b"parentAppId", "parentInstanceId", b"parentInstanceId", "runtimeStatus", b"runtimeStatus", "startedAt", b"startedAt", "version", b"version"]  # noqa: Y015
     def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
     _WhichOneofReturnType__parentAppId: _TypeAlias = _typing.Literal["parentAppId"]  # noqa: Y015
     _WhichOneofArgType__parentAppId: _TypeAlias = _typing.Literal["_parentAppId", b"_parentAppId"]  # noqa: Y015
