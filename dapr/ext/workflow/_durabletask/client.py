@@ -100,7 +100,6 @@ class WorkflowState:
     serialized_output: Optional[str]
     serialized_custom_status: Optional[str]
     failure_details: Optional[task.FailureDetails]
-    termination_reason: Optional[str] = None
 
     def raise_if_failed(self):
         if self.failure_details is not None:
@@ -128,6 +127,17 @@ class OrchestrationFailedError(Exception):
     @property
     def failure_details(self):
         return self._failure_details
+
+
+def _termination_input(output: Optional[Any], reason: Optional[str]):
+    if output is not None and reason is not None:
+        raise ValueError("output and reason cannot be supplied together")
+
+    if reason is not None:
+        return wrappers_pb2.StringValue(value=reason)
+    if output is not None:
+        return wrappers_pb2.StringValue(value=shared.to_json(output))
+    return None
 
 
 def new_orchestration_state(
@@ -158,7 +168,6 @@ def new_orchestration_state(
         state.output.value if not helpers.is_empty(state.output) else None,
         state.customStatus.value if not helpers.is_empty(state.customStatus) else None,
         failure_details,
-        state.terminationReason.value if state.HasField("terminationReason") else None,
     )
 
 
@@ -596,10 +605,9 @@ class TaskHubGrpcClient:
         """Like terminate_orchestration, but returns the sidecar's response."""
         req = pb.TerminateRequest(
             instanceId=instance_id,
-            output=wrappers_pb2.StringValue(value=shared.to_json(output)) if output is not None else None,
+            output=_termination_input(output, reason),
             recursive=recursive,
             router=new_task_router(app_id),
-            reason=wrappers_pb2.StringValue(value=reason) if reason is not None else None,
         )
 
         self._logger.info(f"Terminating instance '{instance_id}'.")
