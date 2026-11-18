@@ -166,7 +166,7 @@ def new_orchestration_state(
         state.lastUpdatedTimestamp.ToDatetime(),
         state.input.value if not helpers.is_empty(state.input) else None,
         state.output.value if not helpers.is_empty(state.output) else None,
-        state.customStatus.value if not helpers.is_empty(state.customStatus) else None,
+        state.customStatus.value if state.HasField("customStatus") else None,
         failure_details,
     )
 
