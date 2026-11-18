@@ -10,7 +10,8 @@
 # limitations under the License.
 
 import asyncio
-from unittest.mock import Mock, patch
+from typing import Optional
+from unittest.mock import AsyncMock, Mock, patch
 
 import grpc
 import pytest
@@ -20,6 +21,7 @@ from dapr.ext.workflow._durabletask.aio.internal.grpc_interceptor import (
     DefaultClientInterceptorImpl,
 )
 from dapr.ext.workflow._durabletask.aio.internal.shared import get_grpc_aio_channel
+from dapr.ext.workflow._durabletask.client import OrchestrationStatus
 from dapr.ext.workflow._durabletask.internal.shared import get_default_host_address
 
 HOST_ADDRESS = 'localhost:50051'
@@ -27,10 +29,10 @@ METADATA = [('key1', 'value1'), ('key2', 'value2')]
 INTERCEPTORS_AIO = [DefaultClientInterceptorImpl(METADATA)]
 
 
-def _make_async_rpc_error(code: grpc.StatusCode) -> grpc.RpcError:
+def _make_async_rpc_error(code: grpc.StatusCode, details: Optional[str] = None) -> grpc.RpcError:
     err = grpc.RpcError()
     err.code = lambda: code  # type: ignore[method-assign]
-    err.details = lambda: f'simulated {code.name}'  # type: ignore[method-assign]
+    err.details = lambda: details if details is not None else f'simulated {code.name}'  # type: ignore[method-assign]
     return err
 
 
@@ -245,16 +247,276 @@ async def test_cancelled_after_deadline_surfaces_as_timeout():
         await client.wait_for_orchestration_completion('test-instance', timeout=0.01)
 
 
-async def test_cancelled_within_deadline_still_propagates():
-    """A CANCELLED with budget remaining is a real cancellation, not a timeout."""
+async def test_cancelled_within_deadline_retries_then_succeeds(monkeypatch):
+    """A server-sent CANCELLED with deadline budget remaining is retried."""
+    instance_id = 'test-instance'
 
-    async def cancel_immediately(*args, **kwargs):
+    from dapr.ext.workflow._durabletask.internal.protos import (
+        ORCHESTRATION_STATUS_COMPLETED,
+        GetInstanceResponse,
+        WorkflowState,
+    )
+
+    response = GetInstanceResponse()
+    response.exists = True
+    state = WorkflowState()
+    state.instanceId = instance_id
+    state.workflowStatus = ORCHESTRATION_STATUS_COMPLETED
+    response.workflowState.CopyFrom(state)
+
+    sleeps = []
+
+    async def fake_sleep(s):
+        sleeps.append(s)
+
+    monkeypatch.setattr('asyncio.sleep', fake_sleep)
+
+    calls = {'n': 0}
+
+    async def fake_call(*args, **kwargs):
+        calls['n'] += 1
+        if calls['n'] == 1:
+            raise _make_async_rpc_error(grpc.StatusCode.CANCELLED)
+        return response
+
+    client = AsyncTaskHubGrpcClient()
+    client._stub = Mock()
+    client._stub.WaitForInstanceCompletion = fake_call
+
+    res = await client.wait_for_orchestration_completion(instance_id, timeout=300)
+    assert res is not None
+    assert res.runtime_status == OrchestrationStatus.COMPLETED
+    assert calls['n'] == 2
+    assert len(sleeps) == 1 and sleeps[0] > 0
+
+
+async def test_cancelled_unbounded_wait_retries_then_succeeds(monkeypatch):
+    """With timeout=0 (unbounded), async wait retries server-sent CANCELLED."""
+    instance_id = 'test-instance'
+
+    from dapr.ext.workflow._durabletask.internal.protos import (
+        ORCHESTRATION_STATUS_COMPLETED,
+        GetInstanceResponse,
+        WorkflowState,
+    )
+
+    response = GetInstanceResponse()
+    response.exists = True
+    state = WorkflowState()
+    state.instanceId = instance_id
+    state.workflowStatus = ORCHESTRATION_STATUS_COMPLETED
+    response.workflowState.CopyFrom(state)
+
+    sleeps = []
+
+    async def fake_sleep(s):
+        sleeps.append(s)
+
+    monkeypatch.setattr('asyncio.sleep', fake_sleep)
+
+    calls = {'n': 0}
+
+    async def fake_call(*args, **kwargs):
+        calls['n'] += 1
+        if calls['n'] == 1:
+            raise _make_async_rpc_error(grpc.StatusCode.CANCELLED)
+        return response
+
+    client = AsyncTaskHubGrpcClient()
+    client._stub = Mock()
+    client._stub.WaitForInstanceCompletion = fake_call
+
+    res = await client.wait_for_orchestration_completion(instance_id, timeout=0)
+    assert res is not None
+    assert res.runtime_status == OrchestrationStatus.COMPLETED
+    assert calls['n'] == 2
+    assert len(sleeps) == 1 and sleeps[0] > 0
+
+
+async def test_unbounded_wait_retries_across_multiple_sidecar_restarts(monkeypatch):
+    """Async unbounded wait survives multiple sidecar restarts separated by long waits."""
+    instance_id = 'test-instance'
+
+    from dapr.ext.workflow._durabletask.internal.protos import (
+        ORCHESTRATION_STATUS_COMPLETED,
+        GetInstanceResponse,
+        WorkflowState,
+    )
+
+    response = GetInstanceResponse()
+    response.exists = True
+    state = WorkflowState()
+    state.instanceId = instance_id
+    state.workflowStatus = ORCHESTRATION_STATUS_COMPLETED
+    response.workflowState.CopyFrom(state)
+
+    fake_time = [0.0]
+
+    def fake_monotonic():
+        return fake_time[0]
+
+    async def fake_sleep(s):
+        pass
+
+    monkeypatch.setattr('dapr.ext.workflow._durabletask.aio.client.time.monotonic', fake_monotonic)
+    monkeypatch.setattr('asyncio.sleep', fake_sleep)
+
+    calls = {'n': 0}
+
+    async def fake_call(*args, **kwargs):
+        calls['n'] += 1
+        if calls['n'] == 1:
+            fake_time[0] += 10.0
+            raise _make_async_rpc_error(grpc.StatusCode.CANCELLED)
+        if calls['n'] == 2:
+            fake_time[0] += 60.0
+            raise _make_async_rpc_error(grpc.StatusCode.CANCELLED)
+        fake_time[0] += 5.0
+        return response
+
+    client = AsyncTaskHubGrpcClient()
+    client._stub = Mock()
+    client._stub.WaitForInstanceCompletion = fake_call
+
+    res = await client.wait_for_orchestration_completion(instance_id, timeout=0)
+    assert res is not None
+    assert res.runtime_status == OrchestrationStatus.COMPLETED
+    assert calls['n'] == 3
+
+
+async def test_unbounded_wait_async_caps_consecutive_in_flight_cancellations(monkeypatch):
+    """When every async wait attempt is CANCELLED after >= 1s, the client caps consecutive
+    window resets (_MAX_CONSECUTIVE_TRANSIENT_RESETS) and eventually propagates
+    the CANCELLED RpcError rather than looping forever."""
+    instance_id = 'test-instance'
+
+    fake_time = [0.0]
+
+    def fake_monotonic():
+        return fake_time[0]
+
+    async def fake_sleep(s):
+        pass
+
+    monkeypatch.setattr('dapr.ext.workflow._durabletask.aio.client.time.monotonic', fake_monotonic)
+    monkeypatch.setattr('asyncio.sleep', fake_sleep)
+
+    calls = {'n': 0}
+
+    async def fake_call(*args, **kwargs):
+        calls['n'] += 1
+        fake_time[0] += 5.0  # >= 1.0s in-flight before server cancellation
         raise _make_async_rpc_error(grpc.StatusCode.CANCELLED)
 
     client = AsyncTaskHubGrpcClient()
     client._stub = Mock()
-    client._stub.WaitForInstanceCompletion = cancel_immediately
+    client._stub.WaitForInstanceCompletion = fake_call
 
     with pytest.raises(grpc.RpcError) as exc_info:
-        await client.wait_for_orchestration_completion('test-instance', timeout=300)
-    assert not isinstance(exc_info.value, TimeoutError)
+        await client.wait_for_orchestration_completion(instance_id, timeout=0)
+
+    assert exc_info.value.code() == grpc.StatusCode.CANCELLED
+    assert calls['n'] > AsyncTaskHubGrpcClient._MAX_CONSECUTIVE_TRANSIENT_RESETS
+
+
+async def test_async_client_aclose_sets_is_closed():
+    """Closing the async client marks is_closed as True."""
+    client = AsyncTaskHubGrpcClient()
+    mock_channel = AsyncMock()
+    client._channel = mock_channel
+    assert not client.is_closed
+    await client.aclose()
+    assert client.is_closed
+    mock_channel.close.assert_awaited_once()
+
+
+async def test_async_cancelled_when_client_closed_reraises_immediately(monkeypatch):
+    """When the async client is closed locally, CANCELLED is not retried and raises immediately."""
+    instance_id = 'test-instance'
+    sleeps = []
+
+    async def fake_sleep(s):
+        sleeps.append(s)
+
+    monkeypatch.setattr('asyncio.sleep', fake_sleep)
+
+    client = AsyncTaskHubGrpcClient()
+    mock_channel = AsyncMock()
+    client._channel = mock_channel
+    await client.aclose()
+
+    calls = {'n': 0}
+
+    async def fake_call(*args, **kwargs):
+        calls['n'] += 1
+        raise _make_async_rpc_error(grpc.StatusCode.CANCELLED)
+
+    client._stub = Mock()
+    client._stub.WaitForInstanceCompletion = fake_call
+
+    with pytest.raises(grpc.RpcError):
+        await client.wait_for_orchestration_completion(instance_id, timeout=0)
+
+    assert calls['n'] == 1
+    assert len(sleeps) == 0
+
+
+async def test_async_cancelled_with_channel_closed_details_reraises_immediately(monkeypatch):
+    """When CANCELLED details indicate channel closure, async wait re-raises immediately."""
+    instance_id = 'test-instance'
+    sleeps = []
+
+    async def fake_sleep(s):
+        sleeps.append(s)
+
+    monkeypatch.setattr('asyncio.sleep', fake_sleep)
+
+    client = AsyncTaskHubGrpcClient()
+    calls = {'n': 0}
+
+    async def fake_call(*args, **kwargs):
+        calls['n'] += 1
+        raise _make_async_rpc_error(grpc.StatusCode.CANCELLED, details='Channel closed!')
+
+    client._stub = Mock()
+    client._stub.WaitForInstanceCompletion = fake_call
+
+    with pytest.raises(grpc.RpcError):
+        await client.wait_for_orchestration_completion(instance_id, timeout=0)
+
+    assert calls['n'] == 1
+    assert len(sleeps) == 0
+
+
+async def test_async_in_flight_cancellation_on_client_aclose_repro(monkeypatch):
+    """Repro from CasperGN: async WaitForInstanceCompletion in flight is aborted when
+    aclose() is invoked. Must re-raise grpc.RpcError immediately without attempting to retry.
+    """
+    instance_id = 'test-instance'
+    sleeps = []
+
+    async def fake_sleep(s):
+        sleeps.append(s)
+
+    monkeypatch.setattr('asyncio.sleep', fake_sleep)
+
+    client = AsyncTaskHubGrpcClient()
+    client._channel = AsyncMock()
+
+    calls = {'n': 0}
+
+    async def fake_wait(*args, **kwargs):
+        calls['n'] += 1
+        await client.aclose()
+        raise _make_async_rpc_error(grpc.StatusCode.CANCELLED, details='Channel closed!')
+
+    client._stub = Mock()
+    client._stub.WaitForInstanceCompletion = fake_wait
+
+    with pytest.raises(grpc.RpcError) as exc_info:
+        await client.wait_for_orchestration_completion(instance_id, timeout=0)
+
+    assert isinstance(exc_info.value, grpc.RpcError)
+    assert not isinstance(exc_info.value, ValueError)
+    assert calls['n'] == 1
+    assert len(sleeps) == 0

@@ -446,3 +446,19 @@ class WorkflowClientCrossAppTest(unittest.TestCase):
             wfClient = DaprWorkflowClient()
             wfClient.terminate_workflow(instance_id=mock_instance_id)
             assert fake_client.last_app_id is None
+
+
+class WorkflowClientLifecycleTest(unittest.TestCase):
+    def test_sync_with_context_manager_closes_client(self):
+        wf_client = DaprWorkflowClient()
+        self.assertFalse(wf_client.is_closed)
+        with wf_client as client:
+            self.assertIs(client, wf_client)
+            self.assertFalse(client.is_closed)
+        self.assertTrue(wf_client.is_closed)
+
+    def test_close_method(self):
+        wf_client = DaprWorkflowClient()
+        self.assertFalse(wf_client.is_closed)
+        wf_client.close()
+        self.assertTrue(wf_client.is_closed)

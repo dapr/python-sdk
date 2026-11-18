@@ -278,6 +278,12 @@ class TaskHubGrpcClient:
         self._channel = channel
         self._stub = stubs.TaskHubSidecarServiceStub(channel)
         self._logger = shared.get_logger('client', log_handler, log_formatter)
+        self._is_closed = False
+
+    @property
+    def is_closed(self) -> bool:
+        """Returns True if the client has been closed."""
+        return self._is_closed
 
     def __enter__(self):
         return self
@@ -291,6 +297,7 @@ class TaskHubGrpcClient:
 
     def close(self) -> None:
         """Close the underlying gRPC channel."""
+        self._is_closed = True
         try:
             # grpc.Channel.close() is idempotent
             self._channel.close()
@@ -436,11 +443,12 @@ class TaskHubGrpcClient:
 
     # Transient gRPC codes that indicate the workflow runtime is temporarily
     # unable to locate the workflow actor — typically immediately after a Dapr
-    # sidecar restart (e.g. recovery from chaos). The placement service has the
-    # actor registration, but local daprd hasn't received the dissemination yet.
-    # Without retry, every poll fails permanently with FAILED_PRECONDITION even
-    # though the workflow runtime state is intact.
+    # sidecar restart (e.g. recovery from chaos), or when daprd cancels in-flight
+    # wait calls on runtime restart/reload (dapr/dapr#10566, dapr/python-sdk#1246).
+    # Without retry, every poll fails permanently with FAILED_PRECONDITION/CANCELLED
+    # even though the workflow runtime state is intact.
     _TRANSIENT_RPC_CODES = (
+        grpc.StatusCode.CANCELLED,
         grpc.StatusCode.FAILED_PRECONDITION,
         grpc.StatusCode.UNAVAILABLE,
     )
@@ -452,6 +460,7 @@ class TaskHubGrpcClient:
     # a slow-but-healthy workflow never enters this path (it just blocks in
     # the long-poll), so its indefinite wait is preserved.
     _MAX_TRANSIENT_RETRY_SECONDS = 30.0
+    _MAX_CONSECUTIVE_TRANSIENT_RESETS = 3
 
     @staticmethod
     def _is_deadline_cancellation(code, deadline: Optional[float]) -> bool:
@@ -460,8 +469,9 @@ class TaskHubGrpcClient:
         As a bounded wait times out, the sidecar can reset the stream (RST_STREAM
         CANCEL) marginally before gRPC raises DEADLINE_EXCEEDED locally, so the same
         expiry surfaces as CANCELLED. Callers asked for a timeout and must see
-        TimeoutError either way. Requiring the budget to be spent keeps a genuine
-        cancellation, or a reset with time still on the clock, propagating as-is.
+        TimeoutError either way. When the deadline has not expired, server-sent
+        cancellations are treated as transient errors and retried until the budget
+        elapses or the client is closed locally.
         """
         if code != grpc.StatusCode.CANCELLED or deadline is None:
             return False
@@ -487,7 +497,9 @@ class TaskHubGrpcClient:
         grpc_timeout = None if unbounded else timeout
         backoff = 0.5
         transient_deadline = None  # unbounded mode only; anchored on first transient
+        consecutive_resets = 0
         while True:
+            call_start = time.monotonic()
             try:
                 return call_fn(grpc_timeout)
             except grpc.RpcError as rpc_error:
@@ -496,15 +508,46 @@ class TaskHubGrpcClient:
                     raise _TransientTimeout()
                 if self._is_deadline_cancellation(code, deadline):
                     raise _TransientTimeout()
+                details = (
+                    rpc_error.details()
+                    if hasattr(rpc_error, 'details') and callable(rpc_error.details)
+                    else str(rpc_error)
+                ) or ''
+                if self._is_closed or (
+                    code == grpc.StatusCode.CANCELLED and 'channel closed' in details.lower()
+                ):
+                    raise
                 if code not in self._TRANSIENT_RPC_CODES:
                     raise
 
                 now = time.monotonic()
+                call_duration = now - call_start
 
                 # In unbounded mode the user budget can't end the loop, so cap
                 # continuous transient retries and re-raise the original error
                 # (matching pre-retry behavior) once the grace window elapses.
+                # If a re-issued wait was healthy and in-flight (held by daprd)
+                # before being cancelled by a new restart, restart the grace
+                # window and reset backoff rather than anchoring on the first error,
+                # up to _MAX_CONSECUTIVE_TRANSIENT_RESETS times to avoid infinite retry loops.
                 if unbounded:
+                    if code == grpc.StatusCode.CANCELLED and call_duration >= 1.0:
+                        if consecutive_resets < self._MAX_CONSECUTIVE_TRANSIENT_RESETS:
+                            consecutive_resets += 1
+                            transient_deadline = None
+                            backoff = 0.5
+                            self._logger.warning(
+                                f"In-flight wait for instance '{instance_id}' was cancelled by server after "
+                                f'{call_duration:.1f}s; resetting transient retry grace window '
+                                f'({consecutive_resets}/{self._MAX_CONSECUTIVE_TRANSIENT_RESETS}).'
+                            )
+                        else:
+                            self._logger.warning(
+                                f"In-flight wait for instance '{instance_id}' reached maximum "
+                                f'consecutive grace window resets ({self._MAX_CONSECUTIVE_TRANSIENT_RESETS}); '
+                                f'transient retry window will not be extended further.'
+                            )
+
                     if transient_deadline is None:
                         transient_deadline = now + self._MAX_TRANSIENT_RETRY_SECONDS
                     elif now >= transient_deadline:
