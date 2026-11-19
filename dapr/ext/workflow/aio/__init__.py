@@ -15,12 +15,15 @@ limitations under the License.
 
 # Re-export MCPToolDef so async users don't need to import from the sync module.
 from dapr.ext.workflow.mcp import MCPToolDef
+from dapr.ext.workflow import FailureDetails, TaskFailedError
 
 from .dapr_workflow_client import DaprWorkflowClient
 from .mcp import DaprMCPClient
 
 __all__ = [
     'DaprWorkflowClient',
+    'TaskFailedError',
+    'FailureDetails',
     'DaprMCPClient',
     'MCPToolDef',
 ]
