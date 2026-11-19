@@ -23,9 +23,13 @@ from typing import Any, Union
 from unittest import mock
 
 from grpc import RpcError, StatusCode
+from google.protobuf import wrappers_pb2
 
 from dapr.conf import settings
 from dapr.ext.workflow._durabletask import client
+from dapr.ext.workflow._durabletask.task import TaskFailedError
+from dapr.ext.workflow._durabletask.internal.helpers import new_failure_details
+from dapr.ext.workflow._durabletask.internal import orchestration_pb2 as orchestration_pb
 from dapr.ext.workflow.dapr_workflow_client import DaprWorkflowClient
 from dapr.ext.workflow.dapr_workflow_context import DaprWorkflowContext
 
@@ -55,6 +59,7 @@ class FakeTaskHubGrpcClient:
     def __init__(self):
         self.last_scheduled_workflow_name = None
         self.last_app_id = None
+        self.last_raised_error = None
 
     def _record_router(self, app_id):
         self.last_app_id = app_id
@@ -106,6 +111,10 @@ class FakeTaskHubGrpcClient:
         self._record_router(app_id)
         return mock_raise_event_result
 
+    def raise_orchestration_error(self, instance_id, event_name, error, *, app_id=None):
+        self._record_router(app_id)
+        self.last_raised_error = (instance_id, event_name, error)
+
     def terminate_orchestration(
         self,
         instance_id: str,
@@ -141,6 +150,43 @@ class FakeTaskHubGrpcClient:
             serialized_custom_status=None,
             failure_details=None,
         )
+
+
+    def test_raising_exception_preserves_python_cause_chain(self):
+        root = TimeoutError("risk service unavailable")
+        raised = RuntimeError("approval rejected")
+        raised.__cause__ = root
+
+        details = new_failure_details(raised)
+
+        self.assertEqual("builtins.RuntimeError", details.errorType)
+        self.assertEqual("approval rejected", details.errorMessage)
+        self.assertEqual("builtins.TimeoutError", details.innerFailure.errorType)
+        self.assertEqual("risk service unavailable", details.innerFailure.errorMessage)
+
+class TaskFailedErrorDetailsTest(unittest.TestCase):
+    def test_structured_failure_exposes_nested_cause(self):
+        failure = orchestration_pb.TaskFailureDetails(
+            errorType="example.ApprovalRejected",
+            errorMessage="approval rejected",
+            stackTrace=wrappers_pb2.StringValue(value="remote stack"),
+            innerFailure=history_pb.TaskFailureDetails(
+                errorType="example.RiskServiceUnavailable",
+                errorMessage="risk service unavailable",
+            ),
+        )
+
+        error = TaskFailedError("external event failed", failure)
+
+        self.assertEqual("example.ApprovalRejected", error.error_type)
+        self.assertEqual("approval rejected", error.error_message)
+        self.assertEqual("remote stack", error.stack_trace)
+        self.assertEqual("example.RiskServiceUnavailable", error.inner_failure.error_type)
+        self.assertEqual("risk service unavailable", error.inner_failure.message)
+        self.assertTrue(error.is_caused_by("example.ApprovalRejected"))
+        self.assertTrue(error.is_caused_by("example.RiskServiceUnavailable"))
+        self.assertFalse(error.is_caused_by("example.NotPresent"))
+        self.assertIs(failure, error.failure_details)
 
 
 class WorkflowClientTimeoutInterceptorTest(unittest.TestCase):
@@ -374,6 +420,13 @@ class WorkflowClientTest(unittest.TestCase):
             )
             assert actual_raise_event_result == mock_raise_event_result
 
+            raised_error = RuntimeError()
+            self.assertIsNone(
+                wfClient.raise_workflow_error(
+                    instance_id=mock_instance_id, event_name='test_event', error=raised_error
+                )
+            )
+
             actual_terminate_result = wfClient.terminate_workflow(
                 instance_id=mock_instance_id, output='test_output'
             )
@@ -423,6 +476,11 @@ class WorkflowClientCrossAppTest(unittest.TestCase):
 
             wfClient.raise_workflow_event(
                 instance_id=mock_instance_id, event_name='test_event', **routing
+            )
+            self._assert_forwarded(fake_client)
+
+            wfClient.raise_workflow_error(
+                instance_id=mock_instance_id, event_name='test_event', error=RuntimeError(), **routing
             )
             self._assert_forwarded(fake_client)
 

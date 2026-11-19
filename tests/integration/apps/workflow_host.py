@@ -29,6 +29,8 @@ from dapr.ext.workflow import DaprWorkflowContext, WorkflowRuntime
 
 WORKFLOW_NAME = 'CrossAppWaitForEvent'
 EVENT_NAME = 'Finish'
+ERROR_WORKFLOW_NAME = 'CrossAppWaitForError'
+ERROR_EVENT_NAME = 'Fail'
 
 
 def wait_for_event_workflow(ctx: DaprWorkflowContext, wf_input: Any) -> Any:
@@ -37,9 +39,16 @@ def wait_for_event_workflow(ctx: DaprWorkflowContext, wf_input: Any) -> Any:
     return payload
 
 
+def wait_for_error_workflow(ctx: DaprWorkflowContext, wf_input: Any) -> Any:
+    """Blocks until ERROR_EVENT_NAME is raised as a workflow failure."""
+    yield ctx.wait_for_external_event(ERROR_EVENT_NAME)
+    return 'unexpected success'
+
+
 def main() -> None:
     runtime = WorkflowRuntime()
     runtime.register_workflow(wait_for_event_workflow, name=WORKFLOW_NAME)
+    runtime.register_workflow(wait_for_error_workflow, name=ERROR_WORKFLOW_NAME)
     runtime.start()
 
     # The test drives everything through the sidecar, so this process just has
