@@ -141,7 +141,9 @@ class ActorRuntime:
             request_body (bytes): the body of request that is passed to actor method arguments.
             reentrancy_id (str): reentrancy ID obtained from the dapr_reentrancy_id header
                 if present. A call with the running turn's ID enters that turn only when
-                reentrancy is enabled for the actor type.
+                reentrancy is enabled for the actor type, and only after `_on_activate`
+                returns. A call back into the actor from `_on_activate` therefore waits
+                until the outbound call times out.
             activation_id (str, optional): the Dapr-Actor-Activation-Id header value.
 
         Returns:

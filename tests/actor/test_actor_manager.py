@@ -1210,6 +1210,24 @@ class ActorManagerTurnTests(unittest.TestCase):
 
         self.assertEqual(['a started', 'a finished', 'b started', 'b finished'], self._log)
 
+    def test_reentrant_call_during_activation_waits_for_it(self):
+        async def scenario() -> None:
+            TurnTrackingActor.activation_release = asyncio.Event()
+            first_task = asyncio.ensure_future(self._append('a', reentrancy_id='chain'))
+            await _let_pending_tasks_run()
+            reentrant_task = asyncio.ensure_future(self._append('b', reentrancy_id='chain'))
+            await _let_pending_tasks_run()
+
+            self.assertEqual(['activated'], self._log)
+
+            TurnTrackingActor.activation_release.set()
+            await asyncio.wait_for(asyncio.gather(first_task, reentrant_task), 5)
+
+        _run(scenario())
+
+        self.assertEqual(1, self._log.count('activated'))
+        self.assertIn('b finished', self._log)
+
     def test_reentrant_call_after_deactivation_is_not_run(self):
         async def scenario() -> None:
             held_task, actor = await self._hold_append('a', reentrancy_id='chain')

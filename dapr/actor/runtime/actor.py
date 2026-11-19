@@ -228,6 +228,10 @@ class Actor:
 
         This method is called right after the actor is activated and before
         any method call or reminders are dispatched on it.
+
+        Calls into this actor, including reentrant ones, wait until this method
+        returns. If it calls another actor that calls back into this one, both
+        wait until the outbound call times out.
         """
         ...
 
