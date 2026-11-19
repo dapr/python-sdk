@@ -28,7 +28,7 @@ from google.protobuf import wrappers_pb2
 from dapr.conf import settings
 from dapr.ext.workflow._durabletask import client
 from dapr.ext.workflow._durabletask.task import TaskFailedError
-from dapr.ext.workflow._durabletask.internal import history_events_pb2 as history_pb
+from dapr.ext.workflow._durabletask.internal import orchestration_pb2 as orchestration_pb
 from dapr.ext.workflow.dapr_workflow_client import DaprWorkflowClient
 from dapr.ext.workflow.dapr_workflow_context import DaprWorkflowContext
 
@@ -153,7 +153,7 @@ class FakeTaskHubGrpcClient:
 
 class TaskFailedErrorDetailsTest(unittest.TestCase):
     def test_structured_failure_exposes_nested_cause(self):
-        failure = history_pb.TaskFailureDetails(
+        failure = orchestration_pb.TaskFailureDetails(
             errorType="example.ApprovalRejected",
             errorMessage="approval rejected",
             stackTrace=wrappers_pb2.StringValue(value="remote stack"),
