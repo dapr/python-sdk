@@ -57,12 +57,6 @@ class _StagingSidecar(stubs.TaskHubSidecarServiceServicer):
         self.requests['RaiseEvent'] = request
         return pb.RaiseEventResponse(staged=self.staged)
 
-    def RaiseError(  # noqa: N802
-        self, request: pb.RaiseEventRequest, context: grpc.ServicerContext
-    ) -> pb.RaiseEventResponse:
-        self.requests['RaiseError'] = request
-        return pb.RaiseEventResponse(staged=self.staged)
-
     def TerminateInstance(  # noqa: N802
         self, request: pb.TerminateRequest, context: grpc.ServicerContext
     ) -> pb.TerminateResponse:
@@ -129,7 +123,7 @@ class StagedOperationsTest(_SidecarTestMixin, unittest.TestCase):
                     INSTANCE_ID, 'approval', RuntimeError()
                 )
                 self.assertEqual(WorkflowOperationResult(staged), error_result)
-                failure = self.sidecar.requests['RaiseError'].failureDetails
+                failure = self.sidecar.requests['RaiseEvent'].failureDetails
                 self.assertEqual('builtins.RuntimeError', failure.errorType)
                 self.assertEqual('', failure.errorMessage)
 
@@ -160,11 +154,11 @@ class StagedOperationsTest(_SidecarTestMixin, unittest.TestCase):
         self.wf_client.raise_workflow_error_with_result(
             INSTANCE_ID, 'approval', RuntimeError(), app_id=TARGET_APP_ID
         )
-        raise_error_request = self.sidecar.requests['RaiseError']
+        raise_error_request = self.sidecar.requests['RaiseEvent']
         self.wf_client.raise_workflow_error(
             INSTANCE_ID, 'approval', RuntimeError(), app_id=TARGET_APP_ID
         )
-        self.assertEqual(raise_error_request, self.sidecar.requests['RaiseError'])
+        self.assertEqual(raise_error_request, self.sidecar.requests['RaiseEvent'])
 
         self.wf_client.terminate_workflow_with_result(
             INSTANCE_ID, output='done', recursive=False, app_id=TARGET_APP_ID
@@ -224,7 +218,7 @@ class AsyncStagedOperationsTest(_SidecarTestMixin, unittest.IsolatedAsyncioTestC
                     INSTANCE_ID, 'approval', RuntimeError()
                 )
                 self.assertEqual(WorkflowOperationResult(staged), error_result)
-                failure = self.sidecar.requests['RaiseError'].failureDetails
+                failure = self.sidecar.requests['RaiseEvent'].failureDetails
                 self.assertEqual('builtins.RuntimeError', failure.errorType)
                 self.assertEqual('', failure.errorMessage)
 
