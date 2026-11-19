@@ -382,7 +382,7 @@ class AsyncTaskHubGrpcClient:
             router=new_task_router(app_id),
         )
         self._logger.info(f"Raising error for event '{event_name}' on instance '{instance_id}'.")
-        return await self._get_stub().RaiseError(req)
+        return await self._get_stub().RaiseEvent(req)
 
     async def terminate_orchestration(
         self,
