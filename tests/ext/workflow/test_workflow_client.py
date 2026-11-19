@@ -28,6 +28,7 @@ from google.protobuf import wrappers_pb2
 from dapr.conf import settings
 from dapr.ext.workflow._durabletask import client
 from dapr.ext.workflow._durabletask.task import TaskFailedError
+from dapr.ext.workflow._durabletask.internal.helpers import new_failure_details
 from dapr.ext.workflow._durabletask.internal import orchestration_pb2 as orchestration_pb
 from dapr.ext.workflow.dapr_workflow_client import DaprWorkflowClient
 from dapr.ext.workflow.dapr_workflow_context import DaprWorkflowContext
@@ -150,6 +151,18 @@ class FakeTaskHubGrpcClient:
             failure_details=None,
         )
 
+
+    def test_raising_exception_preserves_python_cause_chain(self):
+        root = TimeoutError("risk service unavailable")
+        raised = RuntimeError("approval rejected")
+        raised.__cause__ = root
+
+        details = new_failure_details(raised)
+
+        self.assertEqual("builtins.RuntimeError", details.errorType)
+        self.assertEqual("approval rejected", details.errorMessage)
+        self.assertEqual("builtins.TimeoutError", details.innerFailure.errorType)
+        self.assertEqual("risk service unavailable", details.innerFailure.errorMessage)
 
 class TaskFailedErrorDetailsTest(unittest.TestCase):
     def test_structured_failure_exposes_nested_cause(self):
