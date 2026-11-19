@@ -65,11 +65,6 @@ class TaskHubSidecarServiceStub:
                 request_serializer=orchestrator__service__pb2.RaiseEventRequest.SerializeToString,
                 response_deserializer=orchestrator__service__pb2.RaiseEventResponse.FromString,
                 _registered_method=True)
-        self.RaiseError = channel.unary_unary(
-                '/TaskHubSidecarService/RaiseError',
-                request_serializer=orchestrator__service__pb2.RaiseEventRequest.SerializeToString,
-                response_deserializer=orchestrator__service__pb2.RaiseEventResponse.FromString,
-                _registered_method=True)
         self.TerminateInstance = channel.unary_unary(
                 '/TaskHubSidecarService/TerminateInstance',
                 request_serializer=orchestrator__service__pb2.TerminateRequest.SerializeToString,
@@ -172,11 +167,6 @@ class TaskHubSidecarServiceServicer:
         context.set_details('Method not implemented!')
         raise NotImplementedError('Method not implemented!')
  
-    def RaiseError(self, request, context):
-        """Fails the matching external-event wait with structured failure details."""
-        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
-        context.set_details('Method not implemented!')
-        raise NotImplementedError('Method not implemented!')
 
     def TerminateInstance(self, request, context):
         """Terminates a running workflow instance.
@@ -280,11 +270,6 @@ def add_TaskHubSidecarServiceServicer_to_server(servicer, server):
             ),
             'RaiseEvent': grpc.unary_unary_rpc_method_handler(
                     servicer.RaiseEvent,
-                    request_deserializer=orchestrator__service__pb2.RaiseEventRequest.FromString,
-                    response_serializer=orchestrator__service__pb2.RaiseEventResponse.SerializeToString,
-            ),
-            'RaiseError': grpc.unary_unary_rpc_method_handler(
-                    servicer.RaiseError,
                     request_deserializer=orchestrator__service__pb2.RaiseEventRequest.FromString,
                     response_serializer=orchestrator__service__pb2.RaiseEventResponse.SerializeToString,
             ),
