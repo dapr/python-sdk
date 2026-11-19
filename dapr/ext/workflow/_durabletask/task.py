@@ -304,6 +304,17 @@ class FailureDetails:
     def is_non_retriable(self) -> bool:
         return self._is_non_retriable
 
+    def is_caused_by(self, error_type: str) -> bool:
+        """Checks the current failure and its nested causes by their source type name."""
+        if not error_type:
+            return False
+        current: Optional[FailureDetails] = self
+        while current is not None:
+            if current.error_type == error_type:
+                return True
+            current = current.inner_failure
+        return False
+
 
 def _map_failure_details(details: pb.TaskFailureDetails) -> FailureDetails:
     inner = (
@@ -356,6 +367,10 @@ class TaskFailedError(Exception):
     def failure_details(self) -> pb.TaskFailureDetails:
         """Gets the structured protobuf failure, including nested causes."""
         return self._failure_details
+
+    def is_caused_by(self, error_type: str) -> bool:
+        """Checks the source error type across the full cause chain."""
+        return self._details.is_caused_by(error_type)
 
 
 class NonDeterminismError(Exception):
