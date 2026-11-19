@@ -23,9 +23,12 @@ from typing import Any, Union
 from unittest import mock
 
 from grpc import RpcError, StatusCode
+from google.protobuf import wrappers_pb2
 
 from dapr.conf import settings
 from dapr.ext.workflow._durabletask import client
+from dapr.ext.workflow._durabletask.task import TaskFailedError
+from dapr.ext.workflow._durabletask.internal import history_events_pb2 as history_pb
 from dapr.ext.workflow.dapr_workflow_client import DaprWorkflowClient
 from dapr.ext.workflow.dapr_workflow_context import DaprWorkflowContext
 
@@ -146,6 +149,28 @@ class FakeTaskHubGrpcClient:
             serialized_custom_status=None,
             failure_details=None,
         )
+
+
+class TaskFailedErrorDetailsTest(unittest.TestCase):
+    def test_structured_failure_exposes_nested_cause(self):
+        failure = history_pb.TaskFailureDetails(
+            errorType="example.ApprovalRejected",
+            errorMessage="approval rejected",
+            stackTrace=wrappers_pb2.StringValue(value="remote stack"),
+            innerFailure=history_pb.TaskFailureDetails(
+                errorType="example.RiskServiceUnavailable",
+                errorMessage="risk service unavailable",
+            ),
+        )
+
+        error = TaskFailedError("external event failed", failure)
+
+        self.assertEqual("example.ApprovalRejected", error.error_type)
+        self.assertEqual("approval rejected", error.error_message)
+        self.assertEqual("remote stack", error.stack_trace)
+        self.assertEqual("example.RiskServiceUnavailable", error.inner_failure.error_type)
+        self.assertEqual("risk service unavailable", error.inner_failure.message)
+        self.assertIs(failure, error.failure_details)
 
 
 class WorkflowClientTimeoutInterceptorTest(unittest.TestCase):
