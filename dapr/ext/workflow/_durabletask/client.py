@@ -598,7 +598,7 @@ class TaskHubGrpcClient:
             router=new_task_router(app_id),
         )
         self._logger.info(f"Raising error for event '{event_name}' on instance '{instance_id}'.")
-        return self._stub.RaiseError(req)
+        return self._stub.RaiseEvent(req)
 
     def terminate_orchestration(
         self,
