@@ -170,6 +170,9 @@ class TaskFailedErrorDetailsTest(unittest.TestCase):
         self.assertEqual("remote stack", error.stack_trace)
         self.assertEqual("example.RiskServiceUnavailable", error.inner_failure.error_type)
         self.assertEqual("risk service unavailable", error.inner_failure.message)
+        self.assertTrue(error.is_caused_by("example.ApprovalRejected"))
+        self.assertTrue(error.is_caused_by("example.RiskServiceUnavailable"))
+        self.assertFalse(error.is_caused_by("example.NotPresent"))
         self.assertIs(failure, error.failure_details)
 
 
