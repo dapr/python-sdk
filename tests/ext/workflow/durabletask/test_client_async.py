@@ -10,7 +10,8 @@
 # limitations under the License.
 
 import asyncio
-from unittest.mock import Mock, patch
+import json
+from unittest.mock import AsyncMock, Mock, patch
 
 import grpc
 import pytest
@@ -258,3 +259,28 @@ async def test_cancelled_within_deadline_still_propagates():
     with pytest.raises(grpc.RpcError) as exc_info:
         await client.wait_for_orchestration_completion('test-instance', timeout=300)
     assert not isinstance(exc_info.value, TimeoutError)
+
+
+@pytest.mark.parametrize(
+    'data', [False, 0, '', [], {}], ids=['false', 'zero', 'empty_str', 'empty_list', 'empty_dict']
+)
+async def test_raise_orchestration_event_sends_falsy_data(data):
+    """The async client must also send a falsy payload instead of dropping it."""
+    client = AsyncTaskHubGrpcClient()
+    client._stub = AsyncMock()
+
+    await client.raise_orchestration_event('instance1', 'approval', data=data)
+
+    req = client._stub.RaiseEvent.call_args[0][0]
+    assert req.HasField('input')
+    assert req.input.value == json.dumps(data)
+
+
+async def test_raise_orchestration_event_without_data_sends_no_input():
+    client = AsyncTaskHubGrpcClient()
+    client._stub = AsyncMock()
+
+    await client.raise_orchestration_event('instance1', 'approval')
+
+    req = client._stub.RaiseEvent.call_args[0][0]
+    assert not req.HasField('input')

@@ -1,4 +1,7 @@
+import json
 from unittest.mock import MagicMock, patch
+
+import pytest
 
 from dapr.ext.workflow._durabletask import client
 from dapr.ext.workflow._durabletask.internal.grpc_interceptor import DefaultClientInterceptorImpl
@@ -175,3 +178,30 @@ def test_taskhub_client_close_closes_channel_handles_exceptions():
         task_hub_client = client.TaskHubGrpcClient()
         task_hub_client.close()
         mock_channel.close.assert_called_once()
+
+
+@pytest.mark.parametrize(
+    'data', [False, 0, '', [], {}], ids=['false', 'zero', 'empty_str', 'empty_list', 'empty_dict']
+)
+def test_raise_orchestration_event_sends_falsy_data(data):
+    """A falsy payload such as False or 0 must reach the workflow, not arrive as None."""
+    with patch('dapr.ext.workflow._durabletask.internal.shared.get_grpc_channel'):
+        task_hub_client = client.TaskHubGrpcClient()
+    task_hub_client._stub = MagicMock()
+
+    task_hub_client.raise_orchestration_event('instance1', 'approval', data=data)
+
+    req = task_hub_client._stub.RaiseEvent.call_args[0][0]
+    assert req.HasField('input')
+    assert req.input.value == json.dumps(data)
+
+
+def test_raise_orchestration_event_without_data_sends_no_input():
+    with patch('dapr.ext.workflow._durabletask.internal.shared.get_grpc_channel'):
+        task_hub_client = client.TaskHubGrpcClient()
+    task_hub_client._stub = MagicMock()
+
+    task_hub_client.raise_orchestration_event('instance1', 'approval')
+
+    req = task_hub_client._stub.RaiseEvent.call_args[0][0]
+    assert not req.HasField('input')
