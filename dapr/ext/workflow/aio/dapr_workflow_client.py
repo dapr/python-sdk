@@ -374,6 +374,33 @@ class DaprWorkflowClient:
             instance_id, event_name, data=data, app_id=app_id
         )
 
+    async def raise_workflow_error(
+        self,
+        instance_id: str,
+        event_name: str,
+        error: Exception,
+        *,
+        app_id: Optional[str] = None,
+    ) -> None:
+        """Raises a failure for the oldest matching external-event wait."""
+        return await self.__obj.raise_orchestration_error(
+            instance_id, event_name, error, app_id=app_id
+        )
+
+    async def raise_workflow_error_with_result(
+        self,
+        instance_id: str,
+        event_name: str,
+        error: Exception,
+        *,
+        app_id: Optional[str] = None,
+    ) -> WorkflowOperationResult:
+        """Raises a workflow error and reports whether the sidecar staged it."""
+        res = await self.__obj.raise_orchestration_error_with_result(
+            instance_id, event_name, error, app_id=app_id
+        )
+        return WorkflowOperationResult(staged=res.staged)
+
     async def raise_workflow_event_with_result(
         self,
         instance_id: str,

@@ -116,19 +116,47 @@ def new_child_workflow_failed_event(event_id: int, ex: Exception) -> pb.HistoryE
     )
 
 
-def new_failure_details(ex: Exception) -> pb.TaskFailureDetails:
+def new_failure_details(ex: Exception, _seen: Optional[set[int]] = None) -> pb.TaskFailureDetails:
+    existing = getattr(ex, 'failure_details', None)
+    if isinstance(existing, pb.TaskFailureDetails):
+        return existing
+
+    if _seen is None:
+        _seen = set()
+    if id(ex) in _seen:
+        return pb.TaskFailureDetails(
+            errorType=f'{type(ex).__module__}.{type(ex).__qualname__}',
+            errorMessage=str(ex),
+        )
+    _seen.add(id(ex))
+
+    inner = ex.__cause__ or ex.__context__
+    inner_failure = (
+        new_failure_details(inner, _seen)
+        if isinstance(inner, Exception)
+        else None
+    )
     return pb.TaskFailureDetails(
-        errorType=type(ex).__name__,
+        errorType=f'{type(ex).__module__}.{type(ex).__qualname__}',
         errorMessage=str(ex),
         stackTrace=wrappers_pb2.StringValue(value=''.join(traceback.format_tb(ex.__traceback__))),
+        innerFailure=inner_failure,
     )
 
 
-def new_event_raised_event(name: str, encoded_input: Optional[str] = None) -> pb.HistoryEvent:
+def new_event_raised_event(
+    name: str,
+    encoded_input: Optional[str] = None,
+    failure_details: Optional[pb.TaskFailureDetails] = None,
+) -> pb.HistoryEvent:
     return pb.HistoryEvent(
         eventId=-1,
         timestamp=timestamp_pb2.Timestamp(),
-        eventRaised=pb.EventRaisedEvent(name=name, input=get_string_value(encoded_input)),
+        eventRaised=pb.EventRaisedEvent(
+            name=name,
+            input=get_string_value(encoded_input),
+            failureDetails=failure_details,
+        ),
     )
 
 

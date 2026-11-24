@@ -353,6 +353,37 @@ class AsyncTaskHubGrpcClient:
         self._logger.info(f"Raising event '{event_name}' for instance '{instance_id}'.")
         return await self._get_stub().RaiseEvent(req)
 
+    async def raise_orchestration_error(
+        self,
+        instance_id: str,
+        event_name: str,
+        error: Exception,
+        *,
+        app_id: Optional[str] = None,
+    ) -> None:
+        await self.raise_orchestration_error_with_result(
+            instance_id, event_name, error, app_id=app_id
+        )
+
+    async def raise_orchestration_error_with_result(
+        self,
+        instance_id: str,
+        event_name: str,
+        error: Exception,
+        *,
+        app_id: Optional[str] = None,
+    ) -> pb.RaiseEventResponse:
+        if not isinstance(error, Exception):
+            raise TypeError('error must be an Exception')
+        req = pb.RaiseEventRequest(
+            instanceId=instance_id,
+            name=event_name,
+            failureDetails=helpers.new_failure_details(error),
+            router=new_task_router(app_id),
+        )
+        self._logger.info(f"Raising error for event '{event_name}' on instance '{instance_id}'.")
+        return await self._get_stub().RaiseEvent(req)
+
     async def terminate_orchestration(
         self,
         instance_id: str,

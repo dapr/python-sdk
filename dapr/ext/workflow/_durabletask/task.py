@@ -267,10 +267,21 @@ class OrchestrationContext(ABC):
 
 
 class FailureDetails:
-    def __init__(self, message: str, error_type: str, stack_trace: Optional[str]):
+    """Python-friendly view of a workflow task failure and its nested causes."""
+
+    def __init__(
+        self,
+        message: str,
+        error_type: str,
+        stack_trace: Optional[str],
+        inner_failure: Optional[FailureDetails] = None,
+        is_non_retriable: bool = False,
+    ):
         self._message = message
         self._error_type = error_type
         self._stack_trace = stack_trace
+        self._inner_failure = inner_failure
+        self._is_non_retriable = is_non_retriable
 
     @property
     def message(self) -> str:
@@ -284,21 +295,82 @@ class FailureDetails:
     def stack_trace(self) -> Optional[str]:
         return self._stack_trace
 
+    @property
+    def inner_failure(self) -> Optional[FailureDetails]:
+        """Gets the nested cause, if one was supplied by the raising process."""
+        return self._inner_failure
+
+    @property
+    def is_non_retriable(self) -> bool:
+        return self._is_non_retriable
+
+    def is_caused_by(self, error_type: str) -> bool:
+        """Checks the current failure and its nested causes by their source type name."""
+        if not error_type:
+            return False
+        current: Optional[FailureDetails] = self
+        while current is not None:
+            if current.error_type == error_type:
+                return True
+            current = current.inner_failure
+        return False
+
+
+def _map_failure_details(details: pb.TaskFailureDetails) -> FailureDetails:
+    inner = (
+        _map_failure_details(details.innerFailure)
+        if details.HasField('innerFailure')
+        else None
+    )
+    return FailureDetails(
+        details.errorMessage,
+        details.errorType,
+        details.stackTrace.value if not pbh.is_empty(details.stackTrace) else None,
+        inner,
+        details.isNonRetriable,
+    )
+
 
 class TaskFailedError(Exception):
-    """Exception type for all orchestration task failures."""
+    """Raised when an activity, child workflow, or external-event wait fails.
+
+    The details property offers a Python-friendly recursive view. The
+    failure_details property retains the complete protobuf payload.
+    """
 
     def __init__(self, message: str, details: pb.TaskFailureDetails):
         super().__init__(message)
-        self._details = FailureDetails(
-            details.errorMessage,
-            details.errorType,
-            details.stackTrace.value if not pbh.is_empty(details.stackTrace) else None,
-        )
+        self._failure_details = details
+        self._details = _map_failure_details(details)
 
     @property
     def details(self) -> FailureDetails:
         return self._details
+
+    @property
+    def error_type(self) -> str:
+        return self._details.error_type
+
+    @property
+    def error_message(self) -> str:
+        return self._details.message
+
+    @property
+    def stack_trace(self) -> Optional[str]:
+        return self._details.stack_trace
+
+    @property
+    def inner_failure(self) -> Optional[FailureDetails]:
+        return self._details.inner_failure
+
+    @property
+    def failure_details(self) -> pb.TaskFailureDetails:
+        """Gets the structured protobuf failure, including nested causes."""
+        return self._failure_details
+
+    def is_caused_by(self, error_type: str) -> bool:
+        """Checks the source error type across the full cause chain."""
+        return self._details.is_caused_by(error_type)
 
 
 class NonDeterminismError(Exception):
