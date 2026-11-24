@@ -165,6 +165,8 @@ Constructor: `DaprWorkflowClient(host, port, logger_options, max_grpc_message_le
 
 `get_workflow_state` converts gRPC "no such instance exists" errors to a `None` return. The other methods let the error propagate, including `get_workflow_history`, which raises NOT_FOUND for a missing or purged instance. The async variant in `aio/` has the same API with `async` methods.
 
+`wait_for_workflow_start` and `wait_for_workflow_completion` retry transient workflow-runtime gRPC errors with capped exponential backoff inside the caller's `timeout_in_seconds` budget: `FAILED_PRECONDITION`, `UNAVAILABLE`, and `UNKNOWN` whose details contain `actor is closed`. The last one is a workflow actor that was deactivated while the wait was in flight (for example, idle scale-to-zero); the workflow keeps executing and the actor re-activates on demand. Other gRPC errors propagate immediately, and spending the budget on retries raises `TimeoutError`. Keep this policy in `_is_transient_rpc_error()` so new transient cases are added in one place.
+
 ### DaprWorkflowContext (`dapr_workflow_context.py`)
 
 Passed to workflow functions as the first argument:
