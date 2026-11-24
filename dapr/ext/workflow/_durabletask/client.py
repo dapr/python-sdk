@@ -165,10 +165,8 @@ def new_orchestration_state(
 _MAX_UINT32 = 2**32 - 1
 
 
-def _new_list_request(
-    page_size: Optional[int], continuation_token: Optional[str]
-) -> pb.ListInstanceIDsRequest:
-    """Build a ListInstanceIDs request, rejecting page sizes the stores mishandle.
+def _check_page_size(page_size: Optional[int]) -> None:
+    """Reject page sizes the state stores mishandle.
 
     Raises:
         ValueError: If page_size is given and is not between 1 and the uint32 the
@@ -182,7 +180,57 @@ def _new_list_request(
             'the state store, which may return an endless page or fail on it.'
         )
 
-    return pb.ListInstanceIDsRequest(pageSize=page_size, continuationToken=continuation_token)
+
+def _new_list_request(
+    page_size: Optional[int],
+    continuation_token: Optional[str],
+    instance_id_prefix: Optional[str] = None,
+) -> pb.ListInstanceIDsRequest:
+    """Build a ListInstanceIDs request, rejecting page sizes the stores mishandle."""
+    _check_page_size(page_size)
+    return pb.ListInstanceIDsRequest(
+        pageSize=page_size,
+        continuationToken=continuation_token,
+        instanceIdPrefix=instance_id_prefix,
+    )
+
+
+def _new_list_schedules_request(
+    page_size: Optional[int], continuation_token: Optional[str]
+) -> pb.ListWorkflowSchedulesRequest:
+    """Build a ListWorkflowSchedules request. The runtime pages it like ListInstanceIDs."""
+    _check_page_size(page_size)
+    return pb.ListWorkflowSchedulesRequest(pageSize=page_size, continuationToken=continuation_token)
+
+
+def _new_create_schedule_request(
+    name: str,
+    workflow_name: str,
+    schedule: str,
+    *,
+    input: Optional[Any],
+    due_time: Optional[datetime],
+    expiration_time: Optional[datetime],
+    repeats: Optional[int],
+    app_id: Optional[str],
+    app_namespace: Optional[str],
+    overwrite: bool,
+    skip_missed: bool,
+) -> pb.CreateWorkflowScheduleRequest:
+    """Build a CreateWorkflowSchedule request. The runtime validates every field."""
+    workflow_schedule = pb.WorkflowSchedule(
+        name=name,
+        workflowName=workflow_name,
+        schedule=schedule,
+        input=wrappers_pb2.StringValue(value=shared.to_json(input)) if input is not None else None,
+        dueTime=helpers.new_timestamp(due_time) if due_time else None,
+        expirationTime=helpers.new_timestamp(expiration_time) if expiration_time else None,
+        repeats=repeats,
+        targetAppID=app_id,
+        targetAppNamespace=app_namespace,
+        skipMissed=True if skip_missed else None,
+    )
+    return pb.CreateWorkflowScheduleRequest(schedule=workflow_schedule, overwrite=overwrite)
 
 
 def _new_rerun_request(
@@ -348,6 +396,58 @@ class TaskHubGrpcClient:
 
         self._logger.info(f"Starting new '{name}' instance with ID = '{req.instanceId}'.")
         return self._stub.StartInstance(req)
+
+    def create_workflow_schedule(
+        self,
+        name: str,
+        workflow_name: str,
+        schedule: str,
+        *,
+        input: Optional[Any] = None,
+        due_time: Optional[datetime] = None,
+        expiration_time: Optional[datetime] = None,
+        repeats: Optional[int] = None,
+        app_id: Optional[str] = None,
+        app_namespace: Optional[str] = None,
+        overwrite: bool = False,
+        skip_missed: bool = False,
+    ) -> None:
+        req = _new_create_schedule_request(
+            name,
+            workflow_name,
+            schedule,
+            input=input,
+            due_time=due_time,
+            expiration_time=expiration_time,
+            repeats=repeats,
+            app_id=app_id,
+            app_namespace=app_namespace,
+            overwrite=overwrite,
+            skip_missed=skip_missed,
+        )
+        self._logger.info(f"Creating schedule '{name}' for workflow '{workflow_name}'.")
+        self._stub.CreateWorkflowSchedule(req)
+
+    def get_workflow_schedule(self, name: str) -> pb.WorkflowSchedule:
+        req = pb.GetWorkflowScheduleRequest(name=name)
+        res: pb.GetWorkflowScheduleResponse = self._stub.GetWorkflowSchedule(req)
+        return res.schedule
+
+    def list_workflow_schedules(
+        self, *, page_size: Optional[int] = None, continuation_token: Optional[str] = None
+    ) -> pb.ListWorkflowSchedulesResponse:
+        req = _new_list_schedules_request(page_size, continuation_token)
+        return self._stub.ListWorkflowSchedules(req)
+
+    def delete_workflow_schedule(self, name: str) -> None:
+        self._logger.info(f"Deleting schedule '{name}'.")
+        self._stub.DeleteWorkflowSchedule(pb.DeleteWorkflowScheduleRequest(name=name))
+
+    def trigger_workflow_schedule(self, name: str) -> str:
+        self._logger.info(f"Triggering schedule '{name}'.")
+        req = pb.TriggerWorkflowScheduleRequest(name=name)
+        res: pb.TriggerWorkflowScheduleResponse = self._stub.TriggerWorkflowSchedule(req)
+        return res.instanceId
 
     def get_orchestration_state(
         self,
@@ -660,9 +760,13 @@ class TaskHubGrpcClient:
         self._stub.PurgeInstances(req)
 
     def list_instance_ids(
-        self, *, page_size: Optional[int] = None, continuation_token: Optional[str] = None
+        self,
+        *,
+        page_size: Optional[int] = None,
+        continuation_token: Optional[str] = None,
+        instance_id_prefix: Optional[str] = None,
     ) -> pb.ListInstanceIDsResponse:
-        req = _new_list_request(page_size, continuation_token)
+        req = _new_list_request(page_size, continuation_token, instance_id_prefix)
         return self._stub.ListInstanceIDs(req)
 
     def get_instance_history(self, instance_id: str) -> list[pb.HistoryEvent]:

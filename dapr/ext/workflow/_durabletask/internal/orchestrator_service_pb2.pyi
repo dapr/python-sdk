@@ -989,6 +989,7 @@ class ListInstanceIDsRequest(_message.Message):
 
     CONTINUATIONTOKEN_FIELD_NUMBER: _builtins.int
     PAGESIZE_FIELD_NUMBER: _builtins.int
+    INSTANCEIDPREFIX_FIELD_NUMBER: _builtins.int
     continuationToken: _builtins.str
     """continuationToken is the continuation token to use for pagination. This
     is the token which the next page should start from. If not given, the
@@ -998,22 +999,31 @@ class ListInstanceIDsRequest(_message.Message):
     """pageSize is the maximum number of instances to return for this page. If
     not given, all instances will be attempted to be returned.
     """
+    instanceIdPrefix: _builtins.str
+    """instanceIdPrefix, when set, returns only the instances whose ID starts
+    with it.
+    """
     def __init__(
         self,
         *,
         continuationToken: _builtins.str | None = ...,
         pageSize: _builtins.int | None = ...,
+        instanceIdPrefix: _builtins.str | None = ...,
     ) -> None: ...
-    _HasFieldArgType: _TypeAlias = _typing.Literal["_continuationToken", b"_continuationToken", "_pageSize", b"_pageSize", "continuationToken", b"continuationToken", "pageSize", b"pageSize"]  # noqa: Y015
+    _HasFieldArgType: _TypeAlias = _typing.Literal["_continuationToken", b"_continuationToken", "_instanceIdPrefix", b"_instanceIdPrefix", "_pageSize", b"_pageSize", "continuationToken", b"continuationToken", "instanceIdPrefix", b"instanceIdPrefix", "pageSize", b"pageSize"]  # noqa: Y015
     def HasField(self, field_name: _HasFieldArgType) -> _builtins.bool: ...
-    _ClearFieldArgType: _TypeAlias = _typing.Literal["_continuationToken", b"_continuationToken", "_pageSize", b"_pageSize", "continuationToken", b"continuationToken", "pageSize", b"pageSize"]  # noqa: Y015
+    _ClearFieldArgType: _TypeAlias = _typing.Literal["_continuationToken", b"_continuationToken", "_instanceIdPrefix", b"_instanceIdPrefix", "_pageSize", b"_pageSize", "continuationToken", b"continuationToken", "instanceIdPrefix", b"instanceIdPrefix", "pageSize", b"pageSize"]  # noqa: Y015
     def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
     _WhichOneofReturnType__continuationToken: _TypeAlias = _typing.Literal["continuationToken"]  # noqa: Y015
     _WhichOneofArgType__continuationToken: _TypeAlias = _typing.Literal["_continuationToken", b"_continuationToken"]  # noqa: Y015
+    _WhichOneofReturnType__instanceIdPrefix: _TypeAlias = _typing.Literal["instanceIdPrefix"]  # noqa: Y015
+    _WhichOneofArgType__instanceIdPrefix: _TypeAlias = _typing.Literal["_instanceIdPrefix", b"_instanceIdPrefix"]  # noqa: Y015
     _WhichOneofReturnType__pageSize: _TypeAlias = _typing.Literal["pageSize"]  # noqa: Y015
     _WhichOneofArgType__pageSize: _TypeAlias = _typing.Literal["_pageSize", b"_pageSize"]  # noqa: Y015
     @_typing.overload
     def WhichOneof(self, oneof_group: _WhichOneofArgType__continuationToken) -> _WhichOneofReturnType__continuationToken | None: ...
+    @_typing.overload
+    def WhichOneof(self, oneof_group: _WhichOneofArgType__instanceIdPrefix) -> _WhichOneofReturnType__instanceIdPrefix | None: ...
     @_typing.overload
     def WhichOneof(self, oneof_group: _WhichOneofArgType__pageSize) -> _WhichOneofReturnType__pageSize | None: ...
 
