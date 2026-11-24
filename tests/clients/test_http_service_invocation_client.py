@@ -65,6 +65,21 @@ class DaprInvocationHttpClientTests(unittest.TestCase):
         self.assertEqual(b'STRING_BODY', response.data)
         self.assertEqual(self.invoke_url, self.server.request_path())
 
+    def test_invoke_closes_the_event_loop_it_creates(self):
+        self.server.set_response(b'STRING_BODY')
+
+        import asyncio
+        import warnings
+
+        with warnings.catch_warnings(record=True) as caught:
+            warnings.simplefilter('always')
+            self.client.invoke_method(self.app_id, self.method_name, '')
+            self.client.invoke_method(self.app_id, self.method_name, '')
+
+        unclosed_loop_warnings = [w for w in caught if 'unclosed event loop' in str(w.message)]
+        self.assertEqual([], unclosed_loop_warnings)
+        self.assertTrue(asyncio.get_event_loop_policy().get_event_loop().is_closed())
+
     def test_coroutine_basic_invoke(self):
         self.server.set_response(b'STRING_BODY')
 
