@@ -55,6 +55,7 @@ class FakeTaskHubGrpcClient:
     def __init__(self):
         self.last_scheduled_workflow_name = None
         self.last_app_id = None
+        self.last_termination_output = None
 
     def _record_router(self, app_id):
         self.last_app_id = app_id
@@ -113,8 +114,12 @@ class FakeTaskHubGrpcClient:
         output: Union[Any, None] = None,
         recursive: bool = True,
         app_id=None,
+        reason=None,
     ):
         self._record_router(app_id)
+        if output is not None and reason is not None:
+            raise ValueError('output and reason cannot be supplied together')
+        self.last_termination_output = reason if reason is not None else output
         return mock_terminate_result
 
     def suspend_orchestration(self, instance_id: str, *, app_id=None):
@@ -426,8 +431,13 @@ class WorkflowClientCrossAppTest(unittest.TestCase):
             )
             self._assert_forwarded(fake_client)
 
-            wfClient.terminate_workflow(instance_id=mock_instance_id, **routing)
+            wfClient.terminate_workflow(
+                instance_id=mock_instance_id,
+                reason='operator requested',
+                **routing,
+            )
             self._assert_forwarded(fake_client)
+            assert fake_client.last_termination_output == 'operator requested'
 
             wfClient.pause_workflow(instance_id=mock_instance_id, **routing)
             self._assert_forwarded(fake_client)

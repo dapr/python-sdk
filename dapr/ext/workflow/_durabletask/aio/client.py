@@ -43,6 +43,7 @@ from dapr.ext.workflow._durabletask.client import (
     _TransientTimeout,
     new_orchestration_state,
     new_task_router,
+    _termination_input,
 )
 
 # If `opentelemetry-instrumentation-grpc` is available, enable the gRPC client interceptor
@@ -360,9 +361,10 @@ class AsyncTaskHubGrpcClient:
         output: Optional[Any] = None,
         recursive: bool = True,
         app_id: Optional[str] = None,
+        reason: Optional[str] = None,
     ):
         await self.terminate_orchestration_with_result(
-            instance_id, output=output, recursive=recursive, app_id=app_id
+            instance_id, output=output, recursive=recursive, app_id=app_id, reason=reason
         )
 
     async def terminate_orchestration_with_result(
@@ -372,11 +374,12 @@ class AsyncTaskHubGrpcClient:
         output: Optional[Any] = None,
         recursive: bool = True,
         app_id: Optional[str] = None,
+        reason: Optional[str] = None,
     ) -> pb.TerminateResponse:
         """Like terminate_orchestration, but returns the sidecar's response."""
         req = pb.TerminateRequest(
             instanceId=instance_id,
-            output=wrappers_pb2.StringValue(value=shared.to_json(output)) if output else None,
+            output=_termination_input(output, reason),
             recursive=recursive,
             router=new_task_router(app_id),
         )
