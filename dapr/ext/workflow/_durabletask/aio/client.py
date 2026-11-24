@@ -343,10 +343,13 @@ class AsyncTaskHubGrpcClient:
         app_id: Optional[str] = None,
     ) -> pb.RaiseEventResponse:
         """Like raise_orchestration_event, but returns the sidecar's response."""
+        input_pb = (
+            wrappers_pb2.StringValue(value=shared.to_json(data)) if data is not None else None
+        )
         req = pb.RaiseEventRequest(
             instanceId=instance_id,
             name=event_name,
-            input=wrappers_pb2.StringValue(value=shared.to_json(data)) if data else None,
+            input=input_pb,
             router=new_task_router(app_id),
         )
 
