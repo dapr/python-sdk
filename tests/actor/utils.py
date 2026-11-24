@@ -12,6 +12,11 @@ def _async_mock(*args, **kwargs):
     return mock_coro
 
 
+async def _let_pending_tasks_run() -> None:
+    for _ in range(5):
+        await asyncio.sleep(0)
+
+
 def _run(coro):
     try:
         loop = asyncio.get_running_loop()

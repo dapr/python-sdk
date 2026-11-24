@@ -516,8 +516,9 @@ class ActorGrpcHostTests(unittest.IsolatedAsyncioTestCase):
             await asyncio.wait_for(HostTestActor.append_held.wait(), 5)
             stale_tasks = list(self.host._dispatch_tasks)
             new_stream_gate.set()
-            replies = await self._await_replies(1)
+            await self._wait_until(lambda: self._held_activation_id() is None)
             HostTestActor.append_release.set()
+            replies = await self._await_replies(1)
             await asyncio.wait_for(asyncio.gather(*stale_tasks, return_exceptions=True), 5)
 
         self.assertEqual('req-fresh', replies[0].invoke_response.id)

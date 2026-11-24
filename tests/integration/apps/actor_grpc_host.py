@@ -22,11 +22,16 @@ server boilerplate.
 
 import asyncio
 from datetime import timedelta
-from typing import Optional
+from typing import Dict, Optional
 
 from dapr.actor import Actor, ActorGrpcHost, ActorInterface, Remindable, actormethod
-from dapr.actor.runtime.config import ActorRuntimeConfig
+from dapr.actor.runtime.config import ActorRuntimeConfig, ActorTypeConfig
 from dapr.actor.runtime.runtime import ActorRuntime
+
+HOLD_TURN_SECONDS = 1.0
+
+# Per actor ID, outside the actor so a reactivation cannot reset them.
+_turns: Dict[str, Dict[str, int]] = {}
 
 
 class GrpcIntegrationActorInterface(ActorInterface):
@@ -120,12 +125,52 @@ class GrpcIntegrationActor(Actor, GrpcIntegrationActorInterface, Remindable):
         await self._state_manager.save_state()
 
 
+class TurnHoldingActorInterface(ActorInterface):
+    @actormethod(name='HoldTurn')
+    async def hold_turn(self) -> None: ...
+
+    @actormethod(name='GetTurns')
+    async def get_turns(self) -> object: ...
+
+
+class TurnHoldingActor(Actor, TurnHoldingActorInterface):
+    """Counts how many HoldTurn calls run at once on each actor ID."""
+
+    async def hold_turn(self) -> None:
+        turns = self._turns()
+        turns['started'] += 1
+        turns['running'] += 1
+        turns['max_running'] = max(turns['max_running'], turns['running'])
+        try:
+            await asyncio.sleep(HOLD_TURN_SECONDS)
+        finally:
+            turns['running'] -= 1
+        turns['completed'] += 1
+
+    async def get_turns(self) -> object:
+        return dict(self._turns())
+
+    def _turns(self) -> Dict[str, int]:
+        initial = {'started': 0, 'running': 0, 'max_running': 0, 'completed': 0}
+        return _turns.setdefault(self.id.id, initial)
+
+
 async def main() -> None:
-    # Short idle timeout so the idle-deactivation test completes quickly.
-    ActorRuntime.set_actor_config(ActorRuntimeConfig(actor_idle_timeout=timedelta(seconds=3)))
+    # Short idle timeout so the idle-deactivation test completes quickly. TurnHoldingActor keeps
+    # a longer one: calls abandoned by their callers leave it idle in daprd's eyes, and an idle
+    # deactivation would cancel the call that reads the counters.
+    turn_holding_config = ActorTypeConfig(
+        TurnHoldingActor.__name__, actor_idle_timeout=timedelta(minutes=5)
+    )
+    ActorRuntime.set_actor_config(
+        ActorRuntimeConfig(
+            actor_idle_timeout=timedelta(seconds=3), actor_type_configs=[turn_holding_config]
+        )
+    )
 
     host = ActorGrpcHost()
     await host.register_actor(GrpcIntegrationActor)
+    await host.register_actor(TurnHoldingActor)
     print('GrpcIntegrationActor host started', flush=True)
     await host.run_forever()
 
