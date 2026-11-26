@@ -39,7 +39,9 @@ class RetryPolicy:
 
         Args:
             first_retry_interval(timedelta): The retry interval to use for the first retry attempt.
-            max_number_of_attempts(int):  The maximum number of retry attempts.
+            max_number_of_attempts(int):  The maximum number of retry attempts. Use -1 for infinite
+                retries. When using -1, pairing with max_retry_interval or retry_timeout is
+                recommended as workflow execution history continues to grow with each attempt.
             backoff_coefficient(Optional[float]): The backoff coefficient to use for calculating
                 the next retry interval.
             max_retry_interval(Optional[timedelta]): The maximum retry interval to use for any
@@ -50,8 +52,8 @@ class RetryPolicy:
         # validate inputs
         if first_retry_interval < timedelta(seconds=0):
             raise ValueError('first_retry_interval must be >= 0')
-        if max_number_of_attempts < 1:
-            raise ValueError('max_number_of_attempts must be >= 1')
+        if max_number_of_attempts < 1 and max_number_of_attempts != -1:
+            raise ValueError('max_number_of_attempts must be >= 1 or -1 for infinite retries')
         if backoff_coefficient is not None and backoff_coefficient < 1:
             raise ValueError('backoff_coefficient must be >= 1')
         if max_retry_interval is not None and max_retry_interval < timedelta(seconds=0):
