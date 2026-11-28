@@ -14,6 +14,7 @@ limitations under the License.
 """
 
 import asyncio
+import logging
 import socket
 import time
 from typing import Any, Awaitable, BinaryIO, Callable, Dict, List, Optional, Sequence, Text, Union
@@ -92,6 +93,7 @@ from dapr.clients.grpc._response import (
     RegisteredComponents,
     StateResponse,
     TopicEventResponse,
+    TopicEventResponseStatus,
     TryLockResponse,
     UnlockResponse,
     UnlockResponseStatus,
@@ -99,9 +101,13 @@ from dapr.clients.grpc._response import (
 from dapr.clients.grpc._state import StateItem, StateOptions
 from dapr.clients.health import DaprHealth
 from dapr.clients.retry import RetryPolicy
-from dapr.common.pubsub.subscription import StreamInactiveError
+from dapr.common.pubsub.subscription import StreamCancelledError, StreamInactiveError
 from dapr.proto import api_service_v1, api_v1, common_v1
 from dapr.proto.runtime.v1 import binarystore_pb2 as binary_v1
+
+logger = logging.getLogger(__name__)
+
+SUBSCRIPTION_CLOSE_TIMEOUT_SECONDS = 5
 
 
 class DaprGrpcClientAsync:
@@ -599,21 +605,54 @@ class DaprGrpcClientAsync:
         async def stream_messages(sub: Subscription):
             while True:
                 try:
-                    async for message in subscription:
+                    async for message in sub:
                         if message:
-                            response = await handler_fn(message)
+                            try:
+                                response = await handler_fn(message)
+                            except Exception:
+                                logger.exception(
+                                    'Error in subscription handler for topic %s', topic
+                                )
+                                await subscription.respond(
+                                    message, TopicEventResponseStatus.retry
+                                )
+                                continue
                             if response:
                                 await subscription.respond(message, response.status)
                         else:
                             continue
 
-                except StreamInactiveError:
+                except (StreamInactiveError, StreamCancelledError):
                     break
+                except Exception:
+                    while not sub._closed.is_set():
+                        try:
+                            await sub.reconnect_stream()
+                            break
+                        except Exception:
+                            try:
+                                await asyncio.wait_for(sub._closed.wait(), timeout=5)
+                                break
+                            except asyncio.TimeoutError:
+                                pass
+                    if sub._closed.is_set():
+                        break
+                    continue
+
+        streaming_task = asyncio.create_task(stream_messages(subscription))
 
         async def close_subscription():
             await subscription.close()
-
-        asyncio.create_task(stream_messages(subscription))
+            if asyncio.current_task() is not streaming_task:
+                try:
+                    await asyncio.wait_for(
+                        streaming_task, timeout=SUBSCRIPTION_CLOSE_TIMEOUT_SECONDS
+                    )
+                except asyncio.TimeoutError:
+                    logger.warning(
+                        'Subscription handler task still running %ss after close',
+                        SUBSCRIPTION_CLOSE_TIMEOUT_SECONDS,
+                    )
 
         return close_subscription
 
