@@ -87,6 +87,7 @@ from dapr.clients.grpc._response import (
     RegisteredComponents,
     StateResponse,
     TopicEventResponse,
+    TopicEventResponseStatus,
     TryLockResponse,
     UnlockResponse,
     UnlockResponseStatus,
@@ -650,7 +651,14 @@ class DaprGrpcClient:
                     for message in sub:
                         if message:
                             # Process the message
-                            response = handler_fn(message)
+                            try:
+                                response = handler_fn(message)
+                            except Exception:
+                                logger.exception(
+                                    'Error in subscription handler for topic %s', topic
+                                )
+                                subscription.respond(message, TopicEventResponseStatus.retry)
+                                continue
                             if response:
                                 subscription.respond(message, response.status)
                         else:
@@ -662,12 +670,17 @@ class DaprGrpcClient:
                 except Exception:
                     # Stream died — reconnect via the subscription's own
                     # reconnect logic (which waits for the sidecar to be healthy).
-                    try:
-                        sub.reconnect_stream()
-                    except Exception:
-                        # Sidecar still unavailable — back off before retrying
-                        # TODO: Make this configurable
-                        time.sleep(5)
+                    while not sub._closed.is_set():
+                        try:
+                            sub.reconnect_stream()
+                            break
+                        except Exception:
+                            # Sidecar still unavailable — back off before retrying
+                            # TODO: Make this configurable
+                            if sub._closed.wait(5):
+                                break
+                    if sub._closed.is_set():
+                        break
                     continue
 
         def close_subscription():
