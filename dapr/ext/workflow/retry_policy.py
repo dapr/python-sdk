@@ -29,29 +29,39 @@ class RetryPolicy:
     def __init__(
         self,
         *,
-        first_retry_interval: timedelta,
-        max_number_of_attempts: int,
+        first_retry_interval: timedelta = timedelta(seconds=1),
+        max_number_of_attempts: Optional[int] = None,
+        max_attempts: Optional[int] = None,
         backoff_coefficient: Optional[float] = 1.0,
-        max_retry_interval: Optional[timedelta] = None,
+        max_retry_interval: Optional[timedelta] = timedelta(seconds=60),
         retry_timeout: Optional[timedelta] = None,
     ):
         """Creates a new RetryPolicy instance.
 
         Args:
-            first_retry_interval(timedelta): The retry interval to use for the first retry attempt.
-            max_number_of_attempts(int):  The maximum number of retry attempts.
+            first_retry_interval(timedelta): The retry interval to use for the first retry
+                attempt. Defaults to 1 second.
+            max_number_of_attempts(Optional[int]): Deprecated alias for ``max_attempts``.
+            max_attempts(Optional[int]): The maximum total number of attempts (including the
+                initial attempt). Defaults to 1.
             backoff_coefficient(Optional[float]): The backoff coefficient to use for calculating
-                the next retry interval.
+                the next retry interval. Defaults to 1.0.
             max_retry_interval(Optional[timedelta]): The maximum retry interval to use for any
-                retry attempt.
+                retry attempt. Defaults to 60 seconds.
             retry_timeout(Optional[timedelta]): The maximum amount of time to spend retrying the
-                operation.
+                operation. Defaults to None (no overall timeout).
         """
+        resolved_attempts = (
+            max_attempts
+            if max_attempts is not None
+            else (max_number_of_attempts if max_number_of_attempts is not None else 1)
+        )
+
         # validate inputs
         if first_retry_interval < timedelta(seconds=0):
             raise ValueError('first_retry_interval must be >= 0')
-        if max_number_of_attempts < 1:
-            raise ValueError('max_number_of_attempts must be >= 1')
+        if resolved_attempts < 1:
+            raise ValueError('max_attempts must be >= 1')
         if backoff_coefficient is not None and backoff_coefficient < 1:
             raise ValueError('backoff_coefficient must be >= 1')
         if max_retry_interval is not None and max_retry_interval < timedelta(seconds=0):
@@ -61,7 +71,7 @@ class RetryPolicy:
 
         self._obj = task.RetryPolicy(
             first_retry_interval=first_retry_interval,
-            max_number_of_attempts=max_number_of_attempts,
+            max_number_of_attempts=resolved_attempts,
             backoff_coefficient=backoff_coefficient,
             max_retry_interval=max_retry_interval,
             retry_timeout=retry_timeout,
@@ -79,7 +89,12 @@ class RetryPolicy:
 
     @property
     def max_number_of_attempts(self) -> int:
-        """The maximum number of retry attempts."""
+        """The maximum total number of attempts (deprecated alias for max_attempts)."""
+        return self._obj._max_number_of_attempts
+
+    @property
+    def max_attempts(self) -> int:
+        """The maximum total number of attempts (including the initial attempt)."""
         return self._obj._max_number_of_attempts
 
     @property
